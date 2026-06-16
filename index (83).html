@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0C0F3A">
+<title>Mars Field Force — مارس لمتابعة الميدان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E22C4; --teal:#00D4C8; --ink:#0C0F3A;
+  --amber:#FFB020; --coral:#FF4D6D; --green:#1FBF75;
+  --paper:#F4F6FC; --card:#FFFFFF; --line:#E5E8F2;
+  --t1:#0C0F3A; --t2:#5A6080; --t3:#9098B5;
+  --ink2:#161A52; --ink3:#222a6e;
+  --r:16px; --rs:11px;
+  --sh:0 1px 2px rgba(12,15,58,.06),0 8px 24px rgba(12,15,58,.06);
+  --shl:0 18px 50px rgba(12,15,58,.18);
+  --fL:'Inter',system-ui,sans-serif;
+  --fA:'IBM Plex Sans Arabic',system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);color:var(--t1);
+  font-family:var(--fA);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;overscroll-behavior-y:none;
+}
+body[data-lang="en"]{font-family:var(--fL)}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:15px}
+img{max-width:100%;display:block}
+.hide{display:none!important}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#cfd4e6;border-radius:8px}
+
+/* ===== Shell ===== */
+#app{min-height:100vh;min-height:100dvh}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.screen{min-height:100vh;min-height:100dvh}
+
+/* ===== Top bar ===== */
+.top{position:sticky;top:0;z-index:40;background:rgba(244,246,252,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:12px;height:62px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.2px}
+.logo{width:34px;height:34px;border-radius:10px;background:
+  radial-gradient(120% 120% at 20% 10%,var(--teal),transparent 55%),var(--blue);
+  display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;box-shadow:0 6px 16px rgba(30,34,196,.35)}
+.brand small{display:block;font-weight:600;font-size:10.5px;color:var(--t2);letter-spacing:.4px}
+.top .sp{flex:1}
+.pill{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:13px;box-shadow:var(--sh)}
+.pill b{color:var(--blue)}
+.langbtn{cursor:pointer}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(31,191,117,.18)}
+.dot.demo{background:var(--amber);box-shadow:0 0 0 3px rgba(255,176,32,.18)}
+.iconbtn{width:38px;height:38px;border-radius:11px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;box-shadow:var(--sh)}
+
+/* ===== Buttons ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:13px;background:var(--blue);color:#fff;font-weight:700;font-size:15px;box-shadow:0 8px 20px rgba(30,34,196,.28);transition:transform .12s,box-shadow .2s,filter .2s}
+.btn:active{transform:translateY(1px) scale(.99)}
+.btn:disabled{opacity:.45;box-shadow:none;cursor:not-allowed}
+.btn.teal{background:linear-gradient(135deg,var(--teal),#08b6ac);color:#06302e;box-shadow:0 8px 20px rgba(0,212,200,.3)}
+.btn.ghost{background:var(--card);color:var(--t1);border:1px solid var(--line);box-shadow:var(--sh)}
+.btn.dark{background:var(--ink)}
+.btn.coral{background:var(--coral);box-shadow:0 8px 20px rgba(255,77,109,.28)}
+.btn.sm{height:40px;padding:0 14px;font-size:13.5px;border-radius:11px}
+.btn.block{width:100%}
+.btn.lg{height:56px;font-size:16px;border-radius:15px}
+
+/* ===== Cards ===== */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+.pad{padding:18px}
+
+/* ===================== LOGIN ===================== */
+#login{display:grid;place-items:center;position:relative;overflow:hidden;background:
+  radial-gradient(80% 60% at 80% -10%,rgba(0,212,200,.18),transparent 60%),
+  radial-gradient(70% 50% at 0% 110%,rgba(30,34,196,.20),transparent 60%),var(--ink)}
+#login::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:34px 34px;mask-image:radial-gradient(70% 70% at 50% 40%,#000,transparent)}
+.loginbox{position:relative;width:min(440px,92vw);color:#fff;text-align:center;padding:8px 4px 30px}
+.loginlogo{width:64px;height:64px;border-radius:19px;margin:0 auto 18px;background:radial-gradient(120% 120% at 20% 10%,var(--teal),transparent 55%),var(--blue);display:grid;place-items:center;font-weight:800;font-size:26px;box-shadow:0 14px 40px rgba(30,34,196,.5)}
+.loginbox h1{font-size:25px;margin:0 0 4px;letter-spacing:-.4px}
+.loginbox p{color:#aab0e0;margin:0 0 26px;font-size:14px}
+.glass{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:20px;backdrop-filter:blur(12px);text-align:start}
+.fieldlbl{font-size:12.5px;color:#aab0e0;margin:0 0 7px;font-weight:600}
+.input,select.input{width:100%;height:50px;border-radius:13px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#fff;padding:0 14px;font-weight:600;outline:none;transition:border .15s,background .15s}
+.input::placeholder{color:#7e85bd}
+.input:focus{border-color:var(--teal);background:rgba(255,255,255,.1)}
+select.input option{color:#0C0F3A}
+.pinrow{display:flex;gap:10px;margin-top:6px}
+.pinrow input{flex:1;height:56px;text-align:center;font-size:22px;font-weight:800;letter-spacing:3px}
+.seg{display:flex;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:13px;padding:4px;margin-bottom:18px}
+.seg button{flex:1;height:42px;border-radius:10px;color:#aab0e0;font-weight:700;font-size:14px;transition:.15s}
+.seg button.on{background:#fff;color:var(--ink)}
+.loginfoot{margin-top:18px;font-size:12px;color:#8087bf;display:flex;align-items:center;justify-content:center;gap:8px}
+.loginlang{position:absolute;top:18px;inset-inline-end:18px;z-index:3}
+.loginlang button{color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);height:36px;padding:0 14px;border-radius:10px;font-weight:700;font-size:13px}
+
+/* ===================== REP ===================== */
+.hero{border-radius:22px;padding:22px;color:#fff;position:relative;overflow:hidden;background:
+  radial-gradient(120% 130% at 90% -20%,rgba(0,212,200,.4),transparent 55%),
+  linear-gradient(135deg,var(--blue),#3a1ec4)}
+.hero h2{margin:0 0 2px;font-size:21px;letter-spacing:-.3px}
+.hero .sub{color:#cdd2ff;font-size:13.5px}
+.heroStats{display:flex;gap:10px;margin-top:16px}
+.hstat{flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:11px 12px}
+.hstat b{display:block;font-size:22px;line-height:1.1;letter-spacing:-.5px}
+.hstat span{font-size:11.5px;color:#cdd2ff}
+.sectlbl{display:flex;align-items:center;gap:8px;margin:22px 2px 12px;font-weight:700;font-size:14px;color:var(--t2)}
+.sectlbl .cnt{margin-inline-start:auto;font-weight:700;color:var(--blue);background:#eef0ff;padding:2px 10px;border-radius:999px;font-size:12px}
+
+/* store filter chips */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:34px;padding:0 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:13px;color:var(--t2);box-shadow:var(--sh)}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+.store{display:flex;align-items:center;gap:13px;padding:14px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);margin-bottom:10px;transition:transform .12s}
+.store:active{transform:scale(.995)}
+.acctico{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px;flex:none}
+.store .nm{font-weight:700;font-size:14.5px;line-height:1.25}
+.store .meta{font-size:12px;color:var(--t2);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+.store .meta span{display:inline-flex;align-items:center;gap:4px}
+.badge{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;letter-spacing:.2px}
+.badge.done{background:#e3f8ee;color:#138a52}
+.badge.todo{background:#fff1f3;color:#d6315a}
+.store .go{margin-inline-start:auto;width:34px;height:34px;border-radius:11px;background:#eef0ff;display:grid;place-items:center;color:var(--blue);font-weight:800;flex:none}
+
+/* ===================== VISIT FLOW ===================== */
+.flowtop{position:sticky;top:0;z-index:30;background:var(--card);border-bottom:1px solid var(--line)}
+.flowtop .wrap{display:flex;align-items:center;gap:12px;height:60px}
+.steps{display:flex;gap:6px;margin:14px 0 4px}
+.steps .s{flex:1;height:5px;border-radius:99px;background:var(--line)}
+.steps .s.on{background:var(--teal)}
+.steps .s.done{background:var(--blue)}
+.flowttl{font-weight:800;font-size:19px;margin:14px 2px 3px;letter-spacing:-.3px}
+.flowsub{color:var(--t2);font-size:13px;margin-bottom:16px}
+
+.gpsbox{border-radius:var(--r);padding:16px;background:linear-gradient(135deg,#0c0f3a,#161a52);color:#fff;position:relative;overflow:hidden}
+.gpsbox .ring{position:absolute;inset-inline-end:-30px;top:-30px;width:130px;height:130px;border-radius:50%;border:2px solid rgba(0,212,200,.3)}
+.gpsbox .ring2{position:absolute;inset-inline-end:-10px;top:-10px;width:90px;height:90px;border-radius:50%;border:2px solid rgba(0,212,200,.18)}
+.gpsrow{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.gpsrow .ic{width:40px;height:40px;border-radius:12px;background:rgba(0,212,200,.18);display:grid;place-items:center;font-size:18px}
+.gpsrow b{font-size:15px}
+.gpsrow small{color:#aab0e0;font-size:12px}
+.gpsdata{display:flex;gap:10px;margin-top:14px}
+.gpsdata .d{flex:1;background:rgba(255,255,255,.08);border-radius:12px;padding:10px 12px}
+.gpsdata .d span{font-size:11px;color:#aab0e0;display:block}
+.gpsdata .d b{font-size:14px;letter-spacing:.2px}
+.geookay{display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:12.5px;font-weight:700;padding:5px 11px;border-radius:999px}
+.geookay.ok{background:rgba(31,191,117,.18);color:#7df0b8}
+.geookay.warn{background:rgba(255,176,32,.18);color:#ffd58a}
+.geookay.bad{background:rgba(255,77,109,.18);color:#ffafc0}
+.spin{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* photos */
+.shots{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:6px}
+.shot{position:relative;border-radius:15px;border:1.5px dashed var(--line);background:var(--card);aspect-ratio:1/1;overflow:hidden;display:grid;place-items:center;text-align:center}
+.shot.req::after{content:"●";position:absolute;top:9px;inset-inline-end:11px;color:var(--coral);font-size:11px}
+.shot.has{border-style:solid;border-color:var(--teal)}
+.shot.has::after{content:"✓";color:#fff;background:var(--green);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;top:9px;inset-inline-end:9px;font-size:12px;font-weight:800}
+.shot input{position:absolute;inset:0;opacity:0;font-size:0}
+.shot .pl{display:flex;flex-direction:column;align-items:center;gap:7px;padding:10px;pointer-events:none}
+.shot .pl .em{font-size:26px}
+.shot .pl b{font-size:13px;font-weight:700}
+.shot .pl span{font-size:11px;color:var(--t2)}
+.shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.shot .rt{position:absolute;bottom:0;inset-inline-start:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.75));color:#fff;padding:18px 10px 8px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px}
+
+/* activities */
+.field{margin-bottom:15px}
+.field>label{display:block;font-weight:700;font-size:13.5px;margin-bottom:8px}
+.field .hintl{font-weight:500;color:var(--t3);font-size:12px}
+.ta,.tin{width:100%;border:1px solid var(--line);border-radius:13px;padding:13px;background:var(--card);outline:none;transition:border .15s}
+.ta{min-height:90px;resize:vertical}
+.ta:focus,.tin:focus{border-color:var(--blue)}
+.tin{height:50px}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--line);border-radius:13px;background:var(--card);margin-bottom:10px}
+.tog .tg{font-weight:700;font-size:14px}
+.tog .tg small{display:block;font-weight:500;color:var(--t2);font-size:12px}
+.sw{width:50px;height:30px;border-radius:99px;background:#d7dbef;position:relative;flex:none;transition:.2s}
+.sw::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.2);transition:.2s}
+.sw.on{background:var(--teal)}
+.sw.on::after{inset-inline-start:23px}
+body[dir="rtl"] .sw.on::after{inset-inline-start:auto;inset-inline-end:23px}
+.catgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.catpill{display:flex;align-items:center;gap:9px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-weight:600;font-size:13px}
+.catpill .ck{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);flex:none;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:800}
+.catpill.on{border-color:var(--blue);background:#f3f4ff}
+.catpill.on .ck{background:var(--blue);border-color:var(--blue)}
+
+.flowbar{position:sticky;bottom:0;z-index:30;background:linear-gradient(transparent,var(--paper) 22%);padding:14px 0 16px;margin-top:10px}
+
+/* success */
+.celebrate{text-align:center;padding:40px 10px}
+.checkmark{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,var(--green),#0fa362);margin:0 auto 22px;display:grid;place-items:center;color:#fff;font-size:46px;box-shadow:0 18px 40px rgba(31,191,117,.4);animation:pop .5s cubic-bezier(.2,1.4,.5,1)}
+@keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+.scorebig{font-size:54px;font-weight:800;letter-spacing:-2px;line-height:1}
+.scorebig small{font-size:20px;color:var(--t3)}
+
+/* ===================== MANAGER ===================== */
+.mtabs{display:flex;gap:6px;overflow-x:auto;padding:14px 0 4px;scrollbar-width:none}
+.mtabs::-webkit-scrollbar{display:none}
+.mtab{flex:none;height:40px;padding:0 16px;border-radius:11px;background:var(--card);border:1px solid var(--line);font-weight:700;font-size:13.5px;color:var(--t2);box-shadow:var(--sh)}
+.mtab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0}
+.toolbar select,.toolbar input{height:42px;border-radius:11px;border:1px solid var(--line);background:var(--card);padding:0 12px;font-weight:600;color:var(--t1);box-shadow:var(--sh)}
+
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:13px}
+.kpi{border-radius:var(--r);padding:17px;position:relative;overflow:hidden;color:#fff}
+.kpi.k1{background:linear-gradient(135deg,var(--blue),#3a1ec4)}
+.kpi.k2{background:linear-gradient(135deg,#0c0f3a,#222a6e)}
+.kpi.k3{background:linear-gradient(135deg,#08b6ac,var(--teal));color:#06302e}
+.kpi.k4{background:linear-gradient(135deg,#13245e,#2a3aa0)}
+.kpi .kl{font-size:12.5px;opacity:.85;font-weight:600}
+.kpi .kv{font-size:33px;font-weight:800;letter-spacing:-1px;margin-top:4px;line-height:1}
+.kpi .kv small{font-size:15px;opacity:.7}
+.kpi .kt{font-size:11.5px;margin-top:6px;opacity:.8}
+.kpi .ic{position:absolute;inset-inline-end:14px;top:14px;font-size:22px;opacity:.5}
+
+.panel{margin-top:16px}
+.panel h3{margin:0 0 2px;font-size:16px;letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
+.panel .ph{padding:16px 16px 8px}
+.panel .desc{color:var(--t2);font-size:12.5px;margin:0 0 6px}
+
+table{width:100%;border-collapse:collapse}
+.tbl{overflow-x:auto}
+th{font-size:11.5px;color:var(--t3);font-weight:700;text-align:start;padding:11px 13px;border-bottom:1px solid var(--line);white-space:nowrap;text-transform:uppercase;letter-spacing:.4px}
+td{padding:12px 13px;border-bottom:1px solid var(--line);font-size:13.5px;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:#fafbff}
+.repcell{display:flex;align-items:center;gap:10px}
+.av{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px;flex:none}
+.scorebar{display:flex;align-items:center;gap:8px;min-width:120px}
+.scorebar .tr{flex:1;height:7px;border-radius:99px;background:var(--line);overflow:hidden}
+.scorebar .fl{height:100%;border-radius:99px}
+.scorebar b{font-size:12.5px;width:34px}
+.rank{width:24px;height:24px;border-radius:8px;background:#eef0ff;color:var(--blue);display:grid;place-items:center;font-weight:800;font-size:12px}
+.rank.g1{background:#fff5d6;color:#a07800}.rank.g2{background:#eef0f5;color:#5a6080}.rank.g3{background:#f6e6db;color:#9c5a2c}
+
+.tag{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px}
+.tag.ok{background:#e3f8ee;color:#138a52}
+.tag.warn{background:#fff5e1;color:#a06a00}
+.tag.bad{background:#fff1f3;color:#d6315a}
+.tag.acct{background:#eef0ff;color:var(--blue)}
+
+/* visit log rows */
+.vrow{border:1px solid var(--line);border-radius:14px;margin-bottom:10px;background:var(--card);box-shadow:var(--sh);overflow:hidden}
+.vhead{display:flex;align-items:center;gap:12px;padding:13px 14px}
+.vhead .go{margin-inline-start:auto;color:var(--t3);font-size:13px;transition:transform .2s}
+.vrow.open .vhead .go{transform:rotate(90deg)}
+body[dir="rtl"] .vrow.open .vhead .go{transform:rotate(-90deg)}
+.vbody{display:none;border-top:1px solid var(--line);padding:14px;background:#fafbff}
+.vrow.open .vbody{display:block}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:9px}
+.gthumb{border-radius:11px;overflow:hidden;position:relative;aspect-ratio:1/1;background:#eef0f5;border:1px solid var(--line);cursor:pointer}
+.gthumb img{width:100%;height:100%;object-fit:cover}
+.gthumb .cap{position:absolute;bottom:0;inset-inline-start:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:10.5px;font-weight:600;padding:14px 7px 6px}
+.vmeta{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.vmeta .m{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px 11px}
+.vmeta .m span{font-size:11px;color:var(--t2);display:block}
+.vmeta .m b{font-size:13.5px}
+.scoreline{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.spt{font-size:11px;font-weight:600;padding:5px 10px;border-radius:9px;display:flex;align-items:center;gap:5px}
+.spt.y{background:#e3f8ee;color:#138a52}
+.spt.n{background:#fff1f3;color:#d6315a}
+
+.empty{text-align:center;padding:50px 20px;color:var(--t2)}
+.empty .em{font-size:46px;margin-bottom:12px}
+.empty b{display:block;font-size:16px;color:var(--t1);margin-bottom:4px}
+
+/* lightbox */
+.lb{position:fixed;inset:0;z-index:90;background:rgba(8,10,30,.92);display:none;place-items:center;padding:20px}
+.lb.on{display:grid}
+.lb img{max-width:94vw;max-height:80vh;border-radius:14px;box-shadow:var(--shl)}
+.lb .x{position:absolute;top:18px;inset-inline-end:18px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:22px;display:grid;place-items:center}
+.lb .cap{position:absolute;bottom:24px;color:#fff;font-weight:600;background:rgba(0,0,0,.4);padding:8px 16px;border-radius:999px}
+
+/* sheet / modal */
+.scrim{position:fixed;inset:0;background:rgba(12,15,58,.5);backdrop-filter:blur(3px);z-index:60;display:none}
+.scrim.on{display:block}
+.sheet{position:fixed;inset-inline:0;bottom:0;z-index:61;background:var(--paper);border-radius:24px 24px 0 0;box-shadow:var(--shl);transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.9,.3,1);max-height:90vh;overflow:auto}
+.sheet.on{transform:translateY(0)}
+.sheet .grab{width:42px;height:5px;border-radius:99px;background:#d2d7ec;margin:11px auto 4px}
+.sheet .sc{padding:8px 18px 28px;max-width:560px;margin:0 auto}
+.sheet h3{font-size:19px;margin:6px 0 14px}
+
+/* toast */
+#toast{position:fixed;bottom:22px;inset-inline:0;z-index:95;display:flex;justify-content:center;pointer-events:none}
+.toast{background:var(--ink);color:#fff;padding:13px 20px;border-radius:14px;font-weight:600;font-size:14px;box-shadow:var(--shl);display:flex;align-items:center;gap:9px;transform:translateY(20px);opacity:0;transition:.25s}
+.toast.on{transform:translateY(0);opacity:1}
+.toast.err{background:var(--coral)}
+.toast.ok{background:var(--green)}
+
+.note{font-size:12px;color:var(--t2);background:#f0f2fb;border:1px solid var(--line);border-radius:12px;padding:11px 13px;display:flex;gap:9px;line-height:1.5}
+.note .i{flex:none}
+
+@media(max-width:560px){
+  .wrap{padding:0 13px}
+  .heroStats{flex-wrap:wrap}
+  .hstat{min-width:44%}
+}
+</style>
+</head>
+<body data-lang="ar" dir="rtl">
+<div id="app"></div>
+
+<div class="scrim" id="scrim" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet"><div class="grab"></div><div class="sc" id="sheetBody"></div></div>
+<div class="lb" id="lb" onclick="closeLb()"><div class="x">✕</div><img id="lbImg" src=""><div class="cap" id="lbCap"></div></div>
+<div id="toast"></div>
+
+<script>
+/* ====================== DATA ====================== */
+const STORES = [{"region":"North","account":"Carrefour","city":"Sakaka","code":"10454293","rep":"Ossama","store":"319","name":"319-C4-Sakaka-Al Jouf Center Mall"},{"region":"North","account":"Carrefour","city":"Buraida","code":"10454306","rep":"Abdelwahed","store":"365","name":"365-C4 Rawaf Plaza"},{"region":"North","account":"Danube","city":"Onaiza","code":"10454363","rep":"Abdelwahed","store":"159","name":"159-DA, Onaiza Plaza"},{"region":"North","account":"Danube","city":"Hail","code":"10454368","rep":"Sarsik","store":"165","name":"165-Danube/Hail"},{"region":"North","account":"Farm","city":"Arar","code":"10455025","rep":"Ossama","store":"48","name":"48-FARM KING KHALID ST"},{"region":"North","account":"Farm","city":"Sakaka","code":"10455050","rep":"Ossama","store":"80","name":"80-Farm King Abdulaziz ST"},{"region":"North","account":"Lulu","city":"Hail","code":"10454437","rep":"Sarsik","store":"14","name":"14-LU HAIL"},{"region":"North","account":"Panda","city":"Duwadmi","code":"10454859","rep":"Abdelhamid","store":"10018","name":"10018-Panda Dawadmi"},{"region":"North","account":"Panda","city":"Duwadmi","code":"10454759","rep":"Abdelhamid","store":"168","name":"168-Panda Quwayiyah,Dawadmi"},{"region":"North","account":"Panda","city":"Majma","code":"10454761","rep":"Ibrahim","store":"175","name":"175-Panda HAUTAT SUDIR"},{"region":"North","account":"Panda","city":"Buraida","code":"10454882","rep":"Abdelwahed","store":"30001","name":"30001-Panda Shahinat"},{"region":"North","account":"Panda","city":"Hail","code":"10454884","rep":"Sarsik","store":"30004","name":"30004-Panda Wsaita"},{"region":"North","account":"Panda","city":"Onaiza","code":"10454787","rep":"Ibrahim","store":"301","name":"301-Panda Clock R.ABOT"},{"region":"North","account":"Panda","city":"Hail","code":"10454788","rep":"Sarsik","store":"302","name":"302-Panda Hail Plaza"},{"region":"North","account":"Panda","city":"Majma","code":"10454789","rep":"Abdelwahed","store":"304","name":"304-Panda Majmaa"},{"region":"North","account":"Panda","city":"Hail","code":"10454790","rep":"Sarsik","store":"306","name":"306-Panda Hail Sadyan"},{"region":"North","account":"Panda","city":"Badaya","code":"10454791","rep":"Ibrahim","store":"307","name":"307-Panda Badayaa"},{"region":"North","account":"Panda","city":"Buraida","code":"10454792","rep":"Abdelwahed","store":"308","name":"308-Panda Rshidit Brdg"},{"region":"North","account":"Panda","city":"Onaiza","code":"10454793","rep":"Ibrahim","store":"311","name":"311-Panda Al Fahad Dis"},{"region":"North","account":"Panda","city":"Buraida","code":"10454795","rep":"Abdelwahed","store":"313","name":"313-Panda SULTANA"},{"region":"North","account":"Panda","city":"Buraida","code":"10454796","rep":"Abdelwahed","store":"314","name":"314-Panda FAYZYAH BOX"},{"region":"North","account":"Panda","city":"Al Rass","code":"10454798","rep":"Ibrahim","store":"316","name":"316-Panda Khalefa Park"},{"region":"North","account":"Panda","city":"Buraida","code":"10454716","rep":"Abdelwahed","store":"34","name":"34-Panda Family Center"},{"region":"North","account":"Panda","city":"Bakeriya","code":"10454717","rep":"Ibrahim","store":"37","name":"37-Panda Bukairiah"},{"region":"North","account":"Panda","city":"Hafer Al Batin","code":"10454813","rep":"Gamal","store":"417","name":"417-Panda Pr. SULTAN"},{"region":"North","account":"Panda","city":"Hafer Al Batin","code":"10454820","rep":"Gamal","store":"425","name":"425-Panda K. K. M. CTY"},{"region":"North","account":"Tamimi","city":"Onaiza","code":"10455120","rep":"Abdelwahed","store":"190","name":"190-TAMIMI ONAIZA"},{"region":"North","account":"Tamimi","city":"Buraida","code":"10455121","rep":"Abdelwahed","store":"192","name":"192-TAMIMI AL SULTANA"},{"region":"North","account":"Tamimi","city":"Al Rass","code":"10455122","rep":"Abdelwahed","store":"194","name":"194-TAMIMI AL RAS"},{"region":"North","account":"Tier3","city":"Buraida","code":"10454381","rep":"Abdelwahed","store":"141","name":"141-Nestom,Kubaib street,Buraida"},{"region":"North","account":"Tier3","city":"Hafer Al Batin","code":"10454921","rep":"Gamal","store":"Ramiz","name":"141-RAMIZ,HAFER AL BATIN,NEAR KELAW"},{"region":"North","account":"Tier3","city":"Shaqra","code":"10454383","rep":"Abdelhamid","store":"143","name":"143-Nesto,Shaqra"},{"region":"North","account":"Tier3","city":"Majma","code":"10454384","rep":"Abdelwahed","store":"144","name":"144-Nesto,Majma,Majma"},{"region":"North","account":"Lulu","city":"Hafer Al Batin","code":"17616254","rep":"Gamal","store":"Lulu Hafer","name":"39821 Saudi ArabiaEasternHafr Al Ba"},{"region":"North","account":"Danube","city":"Buraida","code":"17618111","rep":"Abdelwahed","store":"178","name":"52383 178-Danube-Nakhil Plaza-Burid"},{"region":"North","account":"Lulu","city":"Onaiza","code":"17637213","rep":"Abdelwahed","store":"Lulu Onaiza","name":"54641 Lulu Saudi Hyper Market-UNIZA"},{"region":"North","account":"Panda","city":"Hail","code":"17665220","rep":"Sarsik","store":"319","name":"55212 319-Panda Al-Shabily-HAIL"},{"region":"North","account":"Othaim","city":"Buraida","code":"17632444","rep":"Moustafa","store":"434","name":"52358 434-OTHAIM-BURIDAH"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454605","rep":"Moustafa","store":"185","name":"185-OTH S/M Nahadah"},{"region":"North","account":"Othaim","city":"Hail","code":"17605534","rep":"Sarsik","store":"462","name":"462- HALAB AGA، HAEL"},{"region":"North","account":"Othaim","city":"Quarrayat","code":"10455191","rep":"Ossama","store":"366","name":"366-OTH S/M Tabarjal, Quarrayat"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"10454587","rep":"Gamal","store":"163","name":"163-OTH S/M Ros Center"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"17598308","rep":"Gamal","store":"439","name":"439- Al Ghurub, As Safaa, Haf"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454643","rep":"Moustafa","store":"332","name":"332-OTH AL Khlij"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454638","rep":"Moustafa","store":"326","name":"326-OTH S/M Buraida"},{"region":"North","account":"Othaim","city":"Sakaka","code":"10454670","rep":"Ossama","store":"367","name":"367-OTH S/M Dumat Aljandal,Sakaka"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454509","rep":"Ibrahim","store":"47","name":"47-OTH S/M Al Rass"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"10454512","rep":"Gamal","store":"52","name":"52-OTH S/M Al Azizia"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"17614981","rep":"Gamal","store":"492","name":"492 - king abdulaziz road"},{"region":"North","account":"Othaim","city":"Bakeriya","code":"10454511","rep":"Ibrahim","store":"51","name":"51-OTH S/M Al Barakiya"},{"region":"North","account":"Othaim","city":"Shaqra","code":"10454488","rep":"Abdelhamid","store":"14","name":"14-OTH S/M Shaqra"},{"region":"North","account":"Othaim","city":"Alrwaidah","code":"17614255","rep":"Abdelhamid","store":"497","name":"497 - AL RUWDAH"},{"region":"North","account":"Othaim","city":"Duwadmi","code":"17632442","rep":"Abdelhamid","store":"763","name":"17471 763-Othaim-Dawadmi"},{"region":"North","account":"Othaim","city":"Majma","code":"10454618","rep":"Moustafa","store":"199","name":"199-OTH S/M Al Ghat"},{"region":"North","account":"Othaim","city":"Duwadmi","code":"10454623","rep":"Abdelhamid","store":"309","name":"309-OTH S/M Quwayiyah"},{"region":"North","account":"Othaim","city":"Hail","code":"10454690","rep":"Sarsik","store":"403","name":"403-403-OTH S/M Al Nujra,Hail"},{"region":"North","account":"Othaim","city":"Arar","code":"10454580","rep":"Ossama","store":"155","name":"155-OTH S/M Arar"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"10454662","rep":"Gamal","store":"354","name":"354-OTH S/M Hafer Albatin"},{"region":"North","account":"Othaim","city":"Muznab","code":"10454507","rep":"Moustafa","store":"45","name":"45-OTH S/M El Mozneb"},{"region":"North","account":"Othaim","city":"Arar","code":"10454529","rep":"Ossama","store":"85","name":"85-OTH HYP Arar"},{"region":"North","account":"Othaim","city":"Turaif","code":"10454563","rep":"Ossama","store":"136","name":"136-OTH S/M Turaif"},{"region":"North","account":"Othaim","city":"Sakaka","code":"10454515","rep":"Ossama","store":"57","name":"57-OTH S/M Skaka"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"10454514","rep":"Gamal","store":"56","name":"56-OTH S/M Al Rabwa"},{"region":"North","account":"Othaim","city":"Quarrayat","code":"10455186","rep":"Ossama","store":"134","name":"134-OTH S/M Qurayyat 1"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454521","rep":"Ibrahim","store":"71","name":"71-OTH S/M Badaya"},{"region":"North","account":"Othaim","city":"Hail","code":"10454540","rep":"Sarsik","store":"100","name":"100-OTH HYP Hail Mall"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454585","rep":"Moustafa","store":"160","name":"160-OTH S/M Akeirsha"},{"region":"North","account":"Othaim","city":"Duwadmi","code":"10454612","rep":"Abdelhamid","store":"193","name":"193-OTH S/M Dawadmi"},{"region":"North","account":"Othaim","city":"Arar","code":"10454689","rep":"Ossama","store":"399","name":"399-OTH S/M Arar,al Uwaiyqilah"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"10454524","rep":"Gamal","store":"80","name":"80-OTH S/M Rafha"},{"region":"North","account":"Othaim","city":"Sakaka","code":"17667384","rep":"Ossama","store":"829","name":"72446 829-Othaim Sakaka Al salam"},{"region":"North","account":"Othaim","city":"Onaiza","code":"10454508","rep":"Moustafa","store":"46","name":"46-OTH S/M Unaizah"},{"region":"North","account":"Othaim","city":"Quarrayat","code":"10455188","rep":"Ossama","store":"151","name":"151-OTH S/M Qurayyat 2"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454598","rep":"Ibrahim","store":"175","name":"175-OTH S/M Al Khabra"},{"region":"North","account":"Othaim","city":"Majma","code":"10454504","rep":"Ibrahim","store":"40","name":"40-OTH S/M Majma"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454513","rep":"Ibrahim","store":"54","name":"54-OTH S/M RIY Kubra"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"10454523","rep":"Gamal","store":"75","name":"75-OTH S/M Al Kaisuma"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454616","rep":"Ibrahim","store":"197","name":"197-OTH S/M Al Asyah"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454591","rep":"Moustafa","store":"167","name":"167-OTH S/M Barakateen"},{"region":"North","account":"Othaim","city":"Hail","code":"17585259","rep":"Sarsik","store":"415","name":"4607 Othaim - 415 Al Khuzama, Hail"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"10454556","rep":"Gamal","store":"126","name":"126-OTH RKN Thoaibya"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454620","rep":"Ibrahim","store":"304","name":"304-OTH RKN Shamasiya"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"17632443","rep":"Gamal","store":"496","name":"76316 496-OTHAIM-HAFR"},{"region":"North","account":"Othaim","city":"Onaiza","code":"17632445","rep":"Moustafa","store":"762","name":"56468 762-OTHAIM-ONAIZA"},{"region":"North","account":"Othaim","city":"Hail","code":"17581343","rep":"Sarsik","store":"423","name":"423-Othaim Samra,Hail"},{"region":"North","account":"Othaim","city":"Majma","code":"10454569","rep":"Ibrahim","store":"142","name":"142-OTH S/M Rwd Sudayr"},{"region":"North","account":"Othaim","city":"Buraida","code":"17611674","rep":"Moustafa","store":"480","name":"480 - OTHAIM,BURIDAH"},{"region":"North","account":"Othaim","city":"Arar","code":"17612150","rep":"Ossama","store":"478","name":"478 - OTHAIM , ARAR"},{"region":"North","account":"Othaim","city":"Arar","code":"17618376","rep":"Ossama","store":"741","name":"73251 Ibn Hamid, 8495, Al-Dahiya Di"},{"region":"North","account":"Othaim","city":"Duwadmi","code":"10454649","rep":"Abdelhamid","store":"340","name":"340-OTH S/M Al-Dhari"},{"region":"North","account":"Othaim","city":"Duwadmi","code":"17620787","rep":"Abdelhamid","store":"734","name":"17531 734- Othaim-Cornal"},{"region":"North","account":"Othaim","city":"Zulfi","code":"10454629","rep":"Moustafa","store":"316","name":"316-OTH S/M AL ZULFI"},{"region":"North","account":"Othaim","city":"Zulfi","code":"10454596","rep":"Moustafa","store":"173","name":"173-OTH S/M Zolfee"},{"region":"North","account":"Othaim","city":"Duwadmi","code":"10454633","rep":"Abdelhamid","store":"320","name":"320-OTH S/M AFIF"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454547","rep":"Moustafa","store":"112","name":"112-OTH S/M FYZIA DIST"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"17645916","rep":"Gamal","store":"810","name":"39748 King Khalid Military City 397"},{"region":"North","account":"Othaim","city":"Buraida","code":"17647937","rep":"Moustafa","store":"831","name":"51411 Othaim 831"},{"region":"North","account":"Othaim","city":"Buraida","code":"10454625","rep":"Moustafa","store":"311","name":"311-OTH BURAIDAH"},{"region":"North","account":"Othaim","city":"Buraida","code":"17617218","rep":"Moustafa","store":"746","name":"746 -Buraida"},{"region":"North","account":"Othaim","city":"Hail","code":"17611673","rep":"Sarsik","store":"489","name":"489 - hail - baqaa"},{"region":"North","account":"Othaim","city":"Hafer Al Batin","code":"10454536","rep":"Gamal","store":"95","name":"95-OTH S/M 5000 KKMC"},{"region":"North","account":"Othaim","city":"Sajer","code":"10454614","rep":"Abdelhamid","store":"195","name":"195-OTH S/M Sajer"},{"region":"North","account":"Othaim","city":"Onaiza","code":"10454593","rep":"Moustafa","store":"169","name":"169-OTH S/M Unizah new"},{"region":"North","account":"Othaim","city":"Hail","code":"17585281","rep":"Sarsik","store":"406","name":"406 - Omar Ibn Al-Khattab Road"},{"region":"North","account":"Othaim","city":"Hail","code":"17585260","rep":"Sarsik","store":"431","name":"55424 Othaim - 431 Omar Ibn Al-Khat"},{"region":"North","account":"Othaim","city":"Muznab","code":"17663013","rep":"Moustafa","store":"848","name":"56523 Store number Othaim 848"},{"region":"North","account":"Othaim","city":"Majma","code":"17645915","rep":"Ibrahim","store":"811","name":"39748 Majma 39748"},{"region":"North","account":"Othaim","city":"Zulfi","code":"10454656","rep":"Moustafa","store":"347","name":"347-OTH S/M Zolfee"}];
+const REPS = [...new Set(STORES.map(s=>s.rep))].sort();
+const ACCOUNTS = [...new Set(STORES.map(s=>s.account))].sort();
+const CITIES = [...new Set(STORES.map(s=>s.city))].sort();
+
+const PHOTOS = [
+  {id:'shelf',   ar:'الرف الرئيسي',    en:'Main Shelf',     em:'🍫'},
+  {id:'fruity',  ar:'الفروتي',         en:'Fruity',         em:'🍬'},
+  {id:'backdoor',ar:'الباك دور/المخزن',en:'Back Door',      em:'📦'},
+  {id:'prices',  ar:'الأسعار',         en:'Prices',         em:'🏷️'},
+  {id:'promo',   ar:'العروض',          en:'Promotions',     em:'🎯'},
+];
+const CATS = [
+  {id:'choco',ar:'شوكولاتة',en:'Chocolate'},
+  {id:'ice',ar:'آيس كريم',en:'Ice Cream'},
+  {id:'cake',ar:'كيك',en:'Cake'},
+  {id:'pet',ar:'بيتفود',en:'Petfood'},
+  {id:'fruity',ar:'فروتي',en:'Fruity'},
+  {id:'gum',ar:'جم',en:'Gum'},
+];
+const ACCENT = {Othaim:'#1E22C4',Panda:'#1FBF75',Carrefour:'#0070C0',Danube:'#C41E3A',Lulu:'#E5007E',Tamimi:'#00A99D',Farm:'#F58220',Tier3:'#5A6080'};
+function acc(a){return ACCENT[a]||'#5A6080'}
+
+/* ====================== STATE / CONFIG ====================== */
+const CFG = loadCfg();
+function loadCfg(){
+  const d={lang:'ar',backend:'',geofence:300,minMin:8,mgrPin:'2024'};
+  try{return Object.assign(d,JSON.parse(localStorage.getItem('mff_cfg')||'{}'))}catch(e){return d}
+}
+function saveCfg(){localStorage.setItem('mff_cfg',JSON.stringify(CFG))}
+
+let S = {lang:CFG.lang, role:null, user:null, mtab:'overview', store:null, flow:null, flowStep:0, chip:'all', mfilter:{rep:'all',account:'all',month:'all'}};
+
+/* ====================== i18n ====================== */
+const T = {
+  ar:{
+    brandSub:'متابعة الميدان · المدرن تريد',
+    cloud:'متصل بالسحابة', demo:'وضع تجريبي',
+    selectRole:'اختر طريقة الدخول', repLogin:'مندوب', mgrLogin:'مدير',
+    pickRep:'اسم المندوب', enterPin:'الرقم السري', pinHint:'تجريبي: 1234',
+    login:'دخول', mgrPinL:'رمز المدير', mgrPinHint:'تجريبي: 2024',
+    welcome:'أهلاً', wrongPin:'الرقم السري غير صحيح',
+    todayVisits:'زيارات اليوم', monthVisits:'زيارات الشهر', myStores:'متاجري', avgScore:'متوسط التقييم',
+    myStoresList:'متاجري', all:'الكل', startVisit:'ابدأ الزيارة', visited:'تمت اليوم', notYet:'لم تتم',
+    // flow
+    checkin:'تسجيل الدخول', photos:'الصور', activity:'الأنشطة', review:'الإرسال',
+    locating:'جاري تحديد موقعك…', locReady:'تم تحديد الموقع', locFail:'تعذّر تحديد الموقع',
+    allowLoc:'يرجى السماح بالوصول للموقع من إعدادات المتصفح للمتابعة',
+    lat:'خط العرض', lng:'خط الطول', acc:'الدقة', time:'الوقت',
+    insideGeo:'داخل نطاق المتجر', nearGeo:'قريب من المتجر', farGeo:'بعيد عن المتجر',
+    geoUnknown:'موقع المتجر غير محدد — سيُحفظ كمرجع', checkinNow:'سجّل الدخول وابدأ',
+    checkedAt:'تم الدخول', photoReq:'التقط الصور المطلوبة', photoHint:'كاميرا مباشرة فقط — لا يمكن الرفع من المعرض',
+    tapCapture:'اضغط للتصوير', required:'إلزامي', retake:'إعادة',
+    photosLeft:'متبقي', photosDone:'كل الصور جاهزة',
+    activityTtl:'أنشطة الزيارة', cats:'الفئات التي تمت خدمتها',
+    pricesChk:'تم تدوين الأسعار', pricesSub:'الأسعار مطابقة على الرف',
+    promoChk:'يوجد عرض نشط', promoSub:'تم تصوير وتأكيد العرض',
+    oosTtl:'أصناف ناقصة (OOS)', oosHint:'افصل بفاصلة', notesTtl:'ملاحظات', notesHint:'أي ملاحظة للمدير…',
+    next:'التالي', back:'رجوع', checkoutSubmit:'سجّل الخروج وأرسل',
+    submitting:'جاري الإرسال…',
+    doneTtl:'تم تسجيل الزيارة', doneSub:'تم حفظ كل البيانات والصور بنجاح',
+    visitScore:'تقييم الزيارة', duration:'مدة الزيارة', backHome:'العودة للرئيسية', newVisit:'زيارة جديدة',
+    min:'دقيقة', mins:'دقيقة',
+    needPhotos:'التقط كل الصور الإلزامية أولاً', needCheckin:'سجّل الدخول أولاً',
+    // manager
+    overview:'نظرة عامة', team:'الفريق', stores:'المتاجر', log:'سجل الزيارات', settings:'الإعدادات',
+    kVisits:'زيارات الشهر', kReps:'مناديب نشطون', kTime:'متوسط المدة', kCompliance:'الالتزام',
+    kVisitsT:'إجمالي هذا الشهر', kRepsT:'من أصل', kTimeT:'داخل المتجر', kComplianceT:'متوسط جودة الزيارات',
+    teamTtl:'أداء الفريق', teamDesc:'مرتب حسب متوسط التقييم — اضغط على المندوب للتفاصيل',
+    thRep:'المندوب', thVisits:'الزيارات', thStores:'متاجر مغطاة', thAvg:'متوسط المدة', thScore:'التقييم', thOnTime:'الالتزام', thLast:'آخر نشاط',
+    storesTtl:'تغطية المتاجر', storesDesc:'الحالة هذا الشهر — المتاجر غير المزارة بالأحمر',
+    thStore:'المتجر', thAcct:'الأكونت', thCity:'المدينة', thVisitsM:'زيارات', thLastV:'آخر زيارة', thStatus:'الحالة',
+    covered:'مغطى', uncovered:'غير مزار',
+    logTtl:'سجل الزيارات', logDesc:'كل زيارة بالصور والموقع والتقييم',
+    noVisits:'لا توجد زيارات بعد', noVisitsSub:'ستظهر الزيارات هنا فور تسجيل المناديب لها من الميدان',
+    photosCol:'الصور', viewMap:'الموقع على الخريطة', scoreBreak:'تفاصيل التقييم',
+    sPhotos:'الصور', sGeo:'داخل النطاق', sDur:'مدة كافية', sAct:'الأنشطة',
+    export:'تصدير CSV', filterRep:'كل المناديب', filterAcct:'كل الأكونتات', filterMonth:'كل الشهور', thisMonth:'هذا الشهر',
+    setTtl:'الإعدادات والربط', backendL:'رابط Google Apps Script (الإنتاج)', backendHint:'الصق رابط الـ Web App. اتركه فارغاً للوضع التجريبي.',
+    geofenceL:'نطاق التحقق من الموقع (متر)', minMinL:'الحد الأدنى لمدة الزيارة (دقيقة)', mgrPinSet:'رمز دخول المدير',
+    save:'حفظ', saved:'تم الحفظ', testConn:'اختبار الاتصال',
+    seedTtl:'بيانات تجريبية', seedDesc:'أنشئ زيارات وهمية لتجربة لوحة التحكم فوراً',
+    seed:'توليد زيارات تجريبية', clearData:'مسح كل البيانات', cleared:'تم المسح', confirmClear:'مسح كل الزيارات نهائياً؟',
+    logout:'خروج', back2:'رجوع',
+    storesOf:'متجر', repsOf:'مندوب', live:'مباشر',
+    avgOf:'متوسط', noScore:'—',
+    photoFromCam:'التُقطت بالكاميرا', flagFar:'⚠ بعيد عن الموقع',
+  },
+  en:{
+    brandSub:'Field Force · Modern Trade',
+    cloud:'Cloud connected', demo:'Demo mode',
+    selectRole:'Choose how to sign in', repLogin:'Merchandiser', mgrLogin:'Manager',
+    pickRep:'Merchandiser name', enterPin:'PIN', pinHint:'Demo: 1234',
+    login:'Sign in', mgrPinL:'Manager code', mgrPinHint:'Demo: 2024',
+    welcome:'Welcome', wrongPin:'Incorrect PIN',
+    todayVisits:'Today', monthVisits:'This month', myStores:'My stores', avgScore:'Avg score',
+    myStoresList:'My stores', all:'All', startVisit:'Start visit', visited:'Done today', notYet:'Pending',
+    checkin:'Check in', photos:'Photos', activity:'Activity', review:'Submit',
+    locating:'Getting your location…', locReady:'Location captured', locFail:'Location unavailable',
+    allowLoc:'Please allow location access in your browser to continue',
+    lat:'Latitude', lng:'Longitude', acc:'Accuracy', time:'Time',
+    insideGeo:'Inside store zone', nearGeo:'Near the store', farGeo:'Far from store',
+    geoUnknown:'Store location not set — saving as reference', checkinNow:'Check in & start',
+    checkedAt:'Checked in', photoReq:'Capture required photos', photoHint:'Live camera only — gallery upload disabled',
+    tapCapture:'Tap to capture', required:'Required', retake:'Retake',
+    photosLeft:'left', photosDone:'All photos captured',
+    activityTtl:'Visit activity', cats:'Categories serviced',
+    pricesChk:'Prices verified', pricesSub:'Shelf prices are correct',
+    promoChk:'Active promotion', promoSub:'Promo captured & confirmed',
+    oosTtl:'Out of stock items', oosHint:'comma separated', notesTtl:'Notes', notesHint:'Anything for the manager…',
+    next:'Next', back:'Back', checkoutSubmit:'Check out & submit',
+    submitting:'Submitting…',
+    doneTtl:'Visit recorded', doneSub:'All data and photos saved successfully',
+    visitScore:'Visit score', duration:'Duration', backHome:'Back home', newVisit:'New visit',
+    min:'min', mins:'min',
+    needPhotos:'Capture all required photos first', needCheckin:'Check in first',
+    overview:'Overview', team:'Team', stores:'Stores', log:'Visit log', settings:'Settings',
+    kVisits:'Visits', kReps:'Active reps', kTime:'Avg time', kCompliance:'Compliance',
+    kVisitsT:'Total this month', kRepsT:'out of', kTimeT:'in store', kComplianceT:'Avg visit quality',
+    teamTtl:'Team performance', teamDesc:'Ranked by average score — tap a rep for detail',
+    thRep:'Rep', thVisits:'Visits', thStores:'Stores', thAvg:'Avg time', thScore:'Score', thOnTime:'Compliance', thLast:'Last active',
+    storesTtl:'Store coverage', storesDesc:'Status this month — unvisited stores in red',
+    thStore:'Store', thAcct:'Account', thCity:'City', thVisitsM:'Visits', thLastV:'Last visit', thStatus:'Status',
+    covered:'Covered', uncovered:'Not visited',
+    logTtl:'Visit log', logDesc:'Every visit with photos, location and score',
+    noVisits:'No visits yet', noVisitsSub:'Visits appear here the moment your team records them in the field',
+    photosCol:'Photos', viewMap:'View on map', scoreBreak:'Score breakdown',
+    sPhotos:'Photos', sGeo:'In zone', sDur:'Duration', sAct:'Activity',
+    export:'Export CSV', filterRep:'All reps', filterAcct:'All accounts', filterMonth:'All months', thisMonth:'This month',
+    setTtl:'Settings & sync', backendL:'Google Apps Script URL (production)', backendHint:'Paste the Web App URL. Leave empty for demo mode.',
+    geofenceL:'Location check radius (m)', minMinL:'Minimum visit duration (min)', mgrPinSet:'Manager access code',
+    save:'Save', saved:'Saved', testConn:'Test connection',
+    seedTtl:'Demo data', seedDesc:'Generate sample visits to preview the dashboard now',
+    seed:'Generate sample visits', clearData:'Clear all data', cleared:'Cleared', confirmClear:'Permanently delete all visits?',
+    logout:'Sign out', back2:'Back',
+    storesOf:'stores', repsOf:'reps', live:'live',
+    avgOf:'avg', noScore:'—',
+    photoFromCam:'Captured by camera', flagFar:'⚠ Far from location',
+  }
+};
+function t(k){return (T[S.lang][k]!==undefined?T[S.lang][k]:k)}
+function isAr(){return S.lang==='ar'}
+
+/* ====================== STORAGE LAYER ====================== */
+const Visits = {
+  key:'mff_visits',
+  cloud(){return !!CFG.backend},
+  async all(){
+    if(this.cloud()){
+      try{
+        const r=await fetch(CFG.backend+'?action=getVisits',{method:'GET'});
+        const j=await r.json(); return j.visits||[];
+      }catch(e){console.warn(e);toast(t('locFail'),'err');return this._local()}
+    }
+    return this._local();
+  },
+  _local(){try{return JSON.parse(localStorage.getItem(this.key)||'[]')}catch(e){return []}},
+  async save(v){
+    if(this.cloud()){
+      const r=await fetch(CFG.backend,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveVisit',visit:v})});
+      const j=await r.json(); return j;
+    }
+    const a=this._local(); a.unshift(v); 
+    try{localStorage.setItem(this.key,JSON.stringify(a));}
+    catch(e){ // quota: drop oldest photos
+      a.forEach(x=>{if(x._heavy)x.photos={}}); 
+      try{localStorage.setItem(this.key,JSON.stringify(a))}catch(e2){toast('Storage full','err')}
+    }
+    return {ok:true};
+  },
+  setLocal(a){localStorage.setItem(this.key,JSON.stringify(a))}
+};
+
+/* ====================== HELPERS ====================== */
+function el(h){const d=document.createElement('div');d.innerHTML=h.trim();return d.firstChild}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function ini(n){return String(n).trim().slice(0,2).toUpperCase()}
+function fmtTime(ts){const d=new Date(ts);return d.toLocaleTimeString(isAr()?'ar-SA':'en-GB',{hour:'2-digit',minute:'2-digit'})}
+function fmtDate(ts){const d=new Date(ts);return d.toLocaleDateString(isAr()?'ar-SA':'en-GB',{day:'2-digit',month:'short'})}
+function fmtDT(ts){return fmtDate(ts)+' · '+fmtTime(ts)}
+function monthKey(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function curMonth(){return monthKey(Date.now())}
+function sameDay(ts){const d=new Date(ts),n=new Date();return d.toDateString()===n.toDateString()}
+function haversine(a,b,c,d){const R=6371000,r=x=>x*Math.PI/180;const dLat=r(c-a),dLng=r(d-b);const x=Math.sin(dLat/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+function repStores(rep){return STORES.filter(s=>s.rep===rep)}
+function storeById(code){return STORES.find(s=>s.code===code)}
+function num(n){return new Intl.NumberFormat(isAr()?'ar-SA':'en-US').format(n)}
+
+function toast(msg,kind){const w=document.getElementById('toast');const e=el('<div class="toast '+(kind||'')+'">'+(kind==='ok'?'✓ ':kind==='err'?'⚠ ':'')+esc(msg)+'</div>');w.innerHTML='';w.appendChild(e);requestAnimationFrame(()=>e.classList.add('on'));setTimeout(()=>{e.classList.remove('on');setTimeout(()=>e.remove(),300)},2600)}
+
+/* GPS */
+function getGPS(){return new Promise((res,rej)=>{
+  if(!navigator.geolocation)return rej('nogeo');
+  navigator.geolocation.getCurrentPosition(
+    p=>res({lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy),ts:Date.now()}),
+    e=>rej(e.code),{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+})}
+
+/* photo compress -> jpeg dataURL */
+function compress(file,max=1000,q=.62){return new Promise((res)=>{
+  const img=new Image();const url=URL.createObjectURL(file);
+  img.onload=()=>{
+    let{width:w,height:h}=img;const sc=Math.min(1,max/Math.max(w,h));
+    w=Math.round(w*sc);h=Math.round(h*sc);
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    const x=c.getContext('2d');x.drawImage(img,0,0,w,h);
+    URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',q));
+  };img.onerror=()=>res(null);img.src=url;
+})}
+
+/* scoring */
+function scoreVisit(v){
+  const pc=PHOTOS.filter(p=>v.photos&&v.photos[p.id]).length;
+  const photoPts=Math.round((pc/PHOTOS.length)*50);
+  const geoPts=(v.geoStatus==='in'||v.geoStatus==='near'||v.geoStatus==='ref')?20:0;
+  const durPts=(v.durationMin>=CFG.minMin)?15:Math.round((Math.min(v.durationMin,CFG.minMin)/CFG.minMin)*15);
+  const actPts=((v.prices?8:0)+(v.promo?7:0));
+  const total=Math.min(100,photoPts+geoPts+durPts+actPts);
+  return {total,photoPts,geoPts,durPts,actPts,photoCount:pc};
+}
+function scoreColor(s){return s>=85?'var(--green)':s>=65?'var(--amber)':'var(--coral)'}
+function scoreTag(s){return s>=85?'ok':s>=65?'warn':'bad'}
+
+/* ====================== ROOT RENDER ====================== */
+function render(){
+  document.body.setAttribute('data-lang',S.lang);
+  document.body.setAttribute('dir',isAr()?'rtl':'ltr');
+  document.documentElement.lang=S.lang;
+  const app=document.getElementById('app');
+  if(!S.role){app.innerHTML='';app.appendChild(Login());return}
+  if(S.role==='rep'){
+    if(S.flow){app.innerHTML='';app.appendChild(Flow());return}
+    app.innerHTML='';app.appendChild(RepHome());return;
+  }
+  app.innerHTML='';app.appendChild(Manager());
+}
+
+/* ====================== LOGIN ====================== */
+function Login(){
+  const sc=el('<div class="screen" id="login"></div>');
+  let mode='rep';
+  const box=el('<div class="loginbox"></div>');
+  box.innerHTML=`
+    <div class="loginlang"><button onclick="toggleLang()">${isAr()?'EN':'عربي'}</button></div>
+    <div class="loginlogo">M</div>
+    <h1>Mars Field Force</h1>
+    <p>${t('brandSub')}</p>`;
+  const glass=el('<div class="glass"></div>');
+  function paint(){
+    glass.innerHTML=`
+      <div class="seg">
+        <button class="${mode==='rep'?'on':''}" data-m="rep">${t('repLogin')}</button>
+        <button class="${mode==='mgr'?'on':''}" data-m="mgr">${t('mgrLogin')}</button>
+      </div>`;
+    if(mode==='rep'){
+      glass.innerHTML+=`
+        <p class="fieldlbl">${t('pickRep')}</p>
+        <select class="input" id="repSel">${REPS.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('')}</select>
+        <p class="fieldlbl" style="margin-top:14px">${t('enterPin')} <span style="opacity:.6">· ${t('pinHint')}</span></p>
+        <input class="input" id="repPin" inputmode="numeric" maxlength="4" placeholder="••••" style="letter-spacing:6px;text-align:center;font-size:20px">
+        <button class="btn block" style="margin-top:16px" id="repGo">${t('login')}</button>`;
+    }else{
+      glass.innerHTML+=`
+        <p class="fieldlbl">${t('mgrPinL')} <span style="opacity:.6">· ${t('mgrPinHint')}</span></p>
+        <input class="input" id="mgrPin" type="password" inputmode="numeric" placeholder="••••" style="letter-spacing:6px;text-align:center;font-size:20px">
+        <button class="btn teal block" style="margin-top:16px" id="mgrGo">${t('login')}</button>`;
+    }
+    glass.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;paint()});
+    const rg=glass.querySelector('#repGo');
+    if(rg)rg.onclick=()=>{
+      const pin=glass.querySelector('#repPin').value;
+      if(pin!==''&&pin!=='1234'){toast(t('wrongPin'),'err');return}
+      S.role='rep';S.user=glass.querySelector('#repSel').value;render();
+    };
+    const mg=glass.querySelector('#mgrGo');
+    if(mg)mg.onclick=()=>{
+      const pin=glass.querySelector('#mgrPin').value;
+      if(pin!==CFG.mgrPin){toast(t('wrongPin'),'err');return}
+      S.role='mgr';render();
+    };
+  }
+  paint();box.appendChild(glass);
+  box.appendChild(el(`<div class="loginfoot"><span class="dot ${CFG.backend?'':'demo'}"></span> ${CFG.backend?t('cloud'):t('demo')}</div>`));
+  sc.appendChild(box);return sc;
+}
+
+/* ====================== TOP BAR ====================== */
+function TopBar(opts={}){
+  const t1=el('<div class="top"><div class="wrap"></div></div>');
+  const w=t1.querySelector('.wrap');
+  w.appendChild(el(`<div class="brand"><div class="logo">M</div><div>Mars Field<small>${opts.sub||t('brandSub')}</small></div></div>`));
+  w.appendChild(el('<div class="sp"></div>'));
+  w.appendChild(el(`<button class="pill langbtn" onclick="toggleLang()">🌐 ${isAr()?'EN':'عربي'}</button>`));
+  const out=el('<button class="iconbtn" title="logout">⎋</button>');
+  out.onclick=()=>{S.role=null;S.flow=null;S.user=null;render()};
+  w.appendChild(out);
+  return t1;
+}
+
+/* ====================== REP HOME ====================== */
+function RepHome(){
+  const sc=el('<div class="screen"></div>');
+  sc.appendChild(TopBar({sub:S.user}));
+  const wrap=el('<div class="wrap" style="padding-top:18px;padding-bottom:40px"></div>');
+
+  Visits.all().then(all=>{
+    const mine=all.filter(v=>v.rep===S.user);
+    const today=mine.filter(v=>sameDay(v.checkinTs));
+    const month=mine.filter(v=>monthKey(v.checkinTs)===curMonth());
+    const scores=month.map(v=>scoreVisit(v).total);
+    const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+    const ms=repStores(S.user);
+    // hero
+    wrap.appendChild(el(`
+      <div class="hero">
+        <h2>${t('welcome')}، ${esc(S.user)} 👋</h2>
+        <div class="sub">${fmtDate(Date.now())} · ${ms.length} ${t('storesOf')}</div>
+        <div class="heroStats">
+          <div class="hstat"><b>${today.length}</b><span>${t('todayVisits')}</span></div>
+          <div class="hstat"><b>${month.length}</b><span>${t('monthVisits')}</span></div>
+          <div class="hstat"><b>${avg||'—'}</b><span>${t('avgScore')}</span></div>
+        </div>
+      </div>`));
+    // filter chips by account
+    const accts=[...new Set(ms.map(s=>s.account))];
+    const chipWrap=el('<div class="chips"></div>');
+    chipWrap.appendChild(chip('all',t('all')));
+    accts.forEach(a=>chipWrap.appendChild(chip(a,a)));
+    function chip(id,label){const c=el(`<button class="chip ${S.chip===id?'on':''}">${esc(label)}</button>`);c.onclick=()=>{S.chip=id;render()};return c}
+    wrap.appendChild(el(`<div class="sectlbl">📍 ${t('myStoresList')}<span class="cnt">${ms.length}</span></div>`));
+    wrap.appendChild(chipWrap);
+
+    const list=el('<div style="margin-top:12px"></div>');
+    const shown=ms.filter(s=>S.chip==='all'||s.account===S.chip);
+    shown.forEach(s=>{
+      const did=today.find(v=>v.store===s.code);
+      const row=el(`
+        <div class="store">
+          <div class="acctico" style="background:${acc(s.account)}">${esc(s.account.slice(0,2).toUpperCase())}</div>
+          <div style="min-width:0;flex:1">
+            <div class="nm">${esc(s.name)}</div>
+            <div class="meta">
+              <span>🏷️ ${esc(s.account)}</span><span>📍 ${esc(s.city)}</span>
+              ${did?`<span class="badge done">✓ ${t('visited')}</span>`:`<span class="badge todo">${t('notYet')}</span>`}
+            </div>
+          </div>
+          <div class="go">›</div>
+        </div>`);
+      row.onclick=()=>startVisit(s);
+      list.appendChild(row);
+    });
+    wrap.appendChild(list);
+  });
+  sc.appendChild(wrap);
+  return sc;
+}
+
+/* ====================== VISIT FLOW ====================== */
+function startVisit(store){
+  S.store=store;
+  S.flow={store:store.code,rep:S.user,account:store.account,city:store.city,storeName:store.name,
+    checkinTs:null,checkinGPS:null,checkoutTs:null,checkoutGPS:null,
+    photos:{},cats:[],prices:false,promo:false,oos:'',notes:'',geoStatus:null,distance:null,_heavy:true};
+  S.flowStep=0;render();
+}
+
+function Flow(){
+  const sc=el('<div class="screen"></div>');
+  const top=el('<div class="flowtop"><div class="wrap"></div></div>');
+  const w=top.querySelector('.wrap');
+  const back=el('<button class="iconbtn">‹</button>');
+  back.onclick=()=>{if(S.flowStep>0&&S.flowStep<3){S.flowStep--;render()}else{S.flow=null;render()}};
+  w.appendChild(back);
+  w.appendChild(el(`<div style="font-weight:800;font-size:14px;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(S.flow.storeName)}</div>`));
+  w.appendChild(el(`<div class="pill" style="height:32px;font-size:12px">${esc(S.flow.account)}</div>`));
+  sc.appendChild(top);
+
+  const wrap=el('<div class="wrap" style="padding-bottom:30px"></div>');
+  const stepNames=['checkin','photos','activity','review'];
+  const steps=el('<div class="steps"></div>');
+  for(let i=0;i<4;i++)steps.appendChild(el(`<div class="s ${i<S.flowStep?'done':i===S.flowStep?'on':''}"></div>`));
+  wrap.appendChild(steps);
+
+  if(S.flowStep===0)wrap.appendChild(StepCheckin());
+  else if(S.flowStep===1)wrap.appendChild(StepPhotos());
+  else if(S.flowStep===2)wrap.appendChild(StepActivity());
+  else if(S.flowStep===3)wrap.appendChild(StepDone());
+  sc.appendChild(wrap);
+  return sc;
+}
+
+function StepCheckin(){
+  const c=el('<div></div>');
+  c.appendChild(el(`<div class="flowttl">${t('checkin')}</div><div class="flowsub">${t('photoHint')==='' ? '' : ''}${isAr()?'يُلتقط موقعك ووقت دخولك تلقائياً':'Your location and check-in time are captured automatically'}</div>`));
+  const gps=el('<div class="gpsbox"><div class="ring"></div><div class="ring2"></div></div>');
+  const body=el('<div></div>');gps.appendChild(body);
+  c.appendChild(gps);
+
+  function locating(){body.innerHTML=`<div class="gpsrow"><div class="ic"><div class="spin"></div></div><div><b>${t('locating')}</b><small>GPS</small></div></div>`}
+  function ready(g){
+    const st=storeGeoStatus(g);
+    S.flow.checkinGPS=g;S.flow.geoStatus=st.code;S.flow.distance=st.dist;
+    body.innerHTML=`
+      <div class="gpsrow"><div class="ic">📍</div><div><b>${t('locReady')}</b><small>${t('acc')} ±${g.acc}m</small></div></div>
+      <div class="gpsdata">
+        <div class="d"><span>${t('lat')}</span><b>${g.lat.toFixed(5)}</b></div>
+        <div class="d"><span>${t('lng')}</span><b>${g.lng.toFixed(5)}</b></div>
+        <div class="d"><span>${t('time')}</span><b>${fmtTime(Date.now())}</b></div>
+      </div>
+      <div class="geookay ${st.cls}">${st.icon} ${st.label}${st.dist!=null?' · '+st.dist+'m':''}</div>`;
+    btn.disabled=false;
+  }
+  function fail(){
+    body.innerHTML=`<div class="gpsrow"><div class="ic" style="background:rgba(255,77,109,.2)">⚠</div><div><b>${t('locFail')}</b><small>${t('allowLoc')}</small></div></div>`;
+    const retry=el(`<button class="btn ghost sm" style="margin-top:14px">↻ ${isAr()?'إعادة المحاولة':'Retry'}</button>`);
+    retry.onclick=go;body.appendChild(retry);
+  }
+  function go(){locating();getGPS().then(ready).catch(fail)}
+
+  c.appendChild(el(`<div class="note" style="margin-top:16px"><span class="i">🔒</span><span>${isAr()?'الوقت والموقع يُسجَّلان من النظام تلقائياً ولا يمكن تعديلهما. الصور تُلتقط بالكاميرا مباشرةً فقط.':'Time and location are recorded automatically by the system and cannot be edited. Photos are taken with the live camera only.'}</span></div>`));
+
+  const bar=el('<div class="flowbar"></div>');
+  const btn=el(`<button class="btn lg block" disabled>${t('checkinNow')} →</button>`);
+  btn.onclick=()=>{S.flow.checkinTs=Date.now();S.flowStep=1;render()};
+  bar.appendChild(btn);c.appendChild(bar);
+  go();
+  return c;
+}
+
+/* store geo status — uses learned store coords if any */
+function storeCoords(){try{return JSON.parse(localStorage.getItem('mff_storeGeo')||'{}')}catch(e){return{}}}
+function setStoreCoords(code,g){const m=storeCoords();if(!m[code]){m[code]={lat:g.lat,lng:g.lng};localStorage.setItem('mff_storeGeo',JSON.stringify(m))}}
+function storeGeoStatus(g){
+  const m=storeCoords();const sc=m[S.flow.store];
+  if(!sc){setStoreCoords(S.flow.store,g);return{code:'ref',cls:'ok',icon:'📌',label:t('geoUnknown'),dist:null}}
+  const d=Math.round(haversine(sc.lat,sc.lng,g.lat,g.lng));
+  if(d<=CFG.geofence)return{code:'in',cls:'ok',icon:'✓',label:t('insideGeo'),dist:d};
+  if(d<=CFG.geofence*3)return{code:'near',cls:'warn',icon:'≈',label:t('nearGeo'),dist:d};
+  return{code:'far',cls:'bad',icon:'⚠',label:t('farGeo'),dist:d};
+}
+
+function StepPhotos(){
+  const c=el('<div></div>');
+  c.appendChild(el(`<div class="flowttl">${t('photoReq')}</div><div class="flowsub">${t('photoHint')}</div>`));
+  const grid=el('<div class="shots"></div>');
+  function refresh(){
+    grid.innerHTML='';
+    PHOTOS.forEach(p=>{
+      const has=!!S.flow.photos[p.id];
+      const cell=el(`<label class="shot ${has?'has':'req'}">
+        <input type="file" accept="image/*" capture="environment">
+        ${has?`<img src="${S.flow.photos[p.id]}"><div class="rt">📷 ${isAr()?p.ar:p.en}</div>`:
+        `<div class="pl"><div class="em">${p.em}</div><b>${isAr()?p.ar:p.en}</b><span>${t('tapCapture')}</span></div>`}
+      </label>`);
+      const inp=cell.querySelector('input');
+      inp.onchange=async(e)=>{
+        const f=e.target.files[0];if(!f)return;
+        toast(isAr()?'جاري المعالجة…':'Processing…');
+        const d=await compress(f);if(d){S.flow.photos[p.id]=d;refresh();updateBtn()}
+      };
+      grid.appendChild(cell);
+    });
+  }
+  refresh();c.appendChild(grid);
+  const status=el('<div style="text-align:center;margin-top:16px;font-weight:700;font-size:13.5px"></div>');
+  c.appendChild(status);
+  const bar=el('<div class="flowbar"></div>');
+  const btn=el(`<button class="btn lg block">${t('next')} →</button>`);
+  function updateBtn(){
+    const done=PHOTOS.filter(p=>S.flow.photos[p.id]).length;
+    const left=PHOTOS.length-done;
+    btn.disabled=left>0;
+    status.innerHTML=left>0?`<span style="color:var(--coral)">● ${num(left)} ${t('photosLeft')}</span>`:`<span style="color:var(--green)">✓ ${t('photosDone')}</span>`;
+  }
+  btn.onclick=()=>{if(PHOTOS.every(p=>S.flow.photos[p.id])){S.flowStep=2;render()}else toast(t('needPhotos'),'err')};
+  bar.appendChild(btn);c.appendChild(bar);updateBtn();
+  return c;
+}
+
+function StepActivity(){
+  const c=el('<div></div>');
+  c.appendChild(el(`<div class="flowttl">${t('activityTtl')}</div>`));
+  // categories
+  c.appendChild(el(`<div class="field"><label>${t('cats')}</label></div>`));
+  const cg=el('<div class="catgrid" style="margin-bottom:18px"></div>');
+  CATS.forEach(cat=>{
+    const on=S.flow.cats.includes(cat.id);
+    const p=el(`<div class="catpill ${on?'on':''}"><div class="ck">${on?'✓':''}</div>${isAr()?cat.ar:cat.en}</div>`);
+    p.onclick=()=>{const i=S.flow.cats.indexOf(cat.id);if(i<0)S.flow.cats.push(cat.id);else S.flow.cats.splice(i,1);S.flowStep=2;render()};
+    cg.appendChild(p);
+  });
+  c.appendChild(cg);
+  // prices toggle
+  c.appendChild(toggle('prices',t('pricesChk'),t('pricesSub'),'🏷️'));
+  c.appendChild(toggle('promo',t('promoChk'),t('promoSub'),'🎯'));
+  // OOS
+  const oos=el(`<div class="field"><label>${t('oosTtl')} <span class="hintl">· ${t('oosHint')}</span></label><input class="tin" id="oos" value="${esc(S.flow.oos)}" placeholder="e.g. Galaxy 80g, Twix"></div>`);
+  oos.querySelector('input').oninput=e=>S.flow.oos=e.target.value;
+  c.appendChild(oos);
+  // notes
+  const nt=el(`<div class="field"><label>${t('notesTtl')}</label><textarea class="ta" id="notes" placeholder="${t('notesHint')}">${esc(S.flow.notes)}</textarea></div>`);
+  nt.querySelector('textarea').oninput=e=>S.flow.notes=e.target.value;
+  c.appendChild(nt);
+
+  const bar=el('<div class="flowbar"></div>');
+  const btn=el(`<button class="btn lg teal block">✓ ${t('checkoutSubmit')}</button>`);
+  btn.onclick=submitVisit;
+  bar.appendChild(btn);c.appendChild(bar);
+  return c;
+  function toggle(key,title,sub,em){
+    const on=S.flow[key];
+    const tg=el(`<div class="tog"><div class="tg">${em} ${title}<small>${sub}</small></div><div class="sw ${on?'on':''}"></div></div>`);
+    tg.onclick=()=>{S.flow[key]=!S.flow[key];S.flowStep=2;render()};
+    return tg;
+  }
+}
+
+async function submitVisit(){
+  const f=S.flow;
+  f.checkoutTs=Date.now();
+  try{f.checkoutGPS=await getGPS()}catch(e){f.checkoutGPS=f.checkinGPS}
+  f.durationMin=Math.max(1,Math.round((f.checkoutTs-f.checkinTs)/60000));
+  f.id='v_'+f.checkinTs+'_'+Math.random().toString(36).slice(2,6);
+  f.ts=f.checkinTs;
+  const sv=scoreVisit(f);f.score=sv.total;
+  toast(t('submitting'));
+  const r=await Visits.save(f);
+  if(r&&r.photoUrls)f.photoUrls=r.photoUrls;
+  S.lastVisit=f;S.flowStep=3;render();
+}
+
+function StepDone(){
+  const f=S.lastVisit||S.flow;
+  const sv=scoreVisit(f);
+  const c=el('<div class="celebrate"></div>');
+  c.appendChild(el('<div class="checkmark">✓</div>'));
+  c.appendChild(el(`<h2 style="margin:0 0 4px">${t('doneTtl')}</h2><p style="color:var(--t2);margin:0 0 22px">${t('doneSub')}</p>`));
+  c.appendChild(el(`<div class="scorebig" style="color:${scoreColor(sv.total)}">${sv.total}<small>/100</small></div><div style="color:var(--t2);font-weight:600;margin-top:2px">${t('visitScore')}</div>`));
+  c.appendChild(el(`<div style="display:flex;gap:10px;justify-content:center;margin:22px 0 26px">
+    <div class="card pad" style="text-align:center"><div style="font-size:22px;font-weight:800">${f.durationMin}</div><div style="font-size:11px;color:var(--t2)">${t('duration')} (${t('min')})</div></div>
+    <div class="card pad" style="text-align:center"><div style="font-size:22px;font-weight:800">${sv.photoCount}/5</div><div style="font-size:11px;color:var(--t2)">${t('photos')}</div></div>
+  </div>`));
+  const b1=el(`<button class="btn lg block" style="max-width:340px;margin:0 auto 10px">${t('backHome')}</button>`);
+  b1.onclick=()=>{S.flow=null;S.lastVisit=null;render()};
+  c.appendChild(b1);
+  return c;
+}
+
+/* ====================== MANAGER ====================== */
+function Manager(){
+  const sc=el('<div class="screen"></div>');
+  sc.appendChild(TopBar({sub:isAr()?'لوحة المدير':'Manager'}));
+  const wrap=el('<div class="wrap" style="padding-bottom:50px"></div>');
+  const tabs=el('<div class="mtabs"></div>');
+  [['overview','📊'],['team','👥'],['stores','🏪'],['log','📋'],['settings','⚙️']].forEach(([id,ic])=>{
+    const b=el(`<button class="mtab ${S.mtab===id?'on':''}">${ic} ${t(id)}</button>`);
+    b.onclick=()=>{S.mtab=id;render()};tabs.appendChild(b);
+  });
+  wrap.appendChild(tabs);
+  const body=el('<div id="mbody"></div>');
+  wrap.appendChild(body);
+  sc.appendChild(wrap);
+
+  if(S.mtab==='settings'){body.appendChild(MgrSettings());return sc}
+  // data-driven tabs
+  body.appendChild(el(`<div class="empty"><div class="spin" style="margin:0 auto"></div></div>`));
+  Visits.all().then(all=>{
+    body.innerHTML='';
+    if(S.mtab==='overview')body.appendChild(MgrOverview(all));
+    else if(S.mtab==='team')body.appendChild(MgrTeam(all));
+    else if(S.mtab==='stores')body.appendChild(MgrStores(all));
+    else if(S.mtab==='log')body.appendChild(MgrLog(all));
+  });
+  return sc;
+}
+
+function applyFilter(all){
+  return all.filter(v=>{
+    if(S.mfilter.rep!=='all'&&v.rep!==S.mfilter.rep)return false;
+    if(S.mfilter.account!=='all'&&v.account!==S.mfilter.account)return false;
+    if(S.mfilter.month!=='all'&&monthKey(v.checkinTs)!==S.mfilter.month)return false;
+    return true;
+  });
+}
+function Toolbar(all){
+  const months=[...new Set(all.map(v=>monthKey(v.checkinTs)))].sort().reverse();
+  const tb=el('<div class="toolbar"></div>');
+  const rep=el(`<select><option value="all">${t('filterRep')}</option>${REPS.map(r=>`<option ${S.mfilter.rep===r?'selected':''}>${esc(r)}</option>`).join('')}</select>`);
+  rep.onchange=e=>{S.mfilter.rep=e.target.value;render()};
+  const ac=el(`<select><option value="all">${t('filterAcct')}</option>${ACCOUNTS.map(a=>`<option ${S.mfilter.account===a?'selected':''}>${esc(a)}</option>`).join('')}</select>`);
+  ac.onchange=e=>{S.mfilter.account=e.target.value;render()};
+  const mo=el(`<select><option value="all">${t('filterMonth')}</option>${months.map(m=>`<option value="${m}" ${S.mfilter.month===m?'selected':''}>${m}</option>`).join('')}</select>`);
+  mo.onchange=e=>{S.mfilter.month=e.target.value;render()};
+  tb.appendChild(rep);tb.appendChild(ac);tb.appendChild(mo);
+  return tb;
+}
+
+function MgrOverview(all){
+  const c=el('<div></div>');
+  c.appendChild(Toolbar(all));
+  const data=applyFilter(all);
+  const month=S.mfilter.month==='all'?data.filter(v=>monthKey(v.checkinTs)===curMonth()):data;
+  const reps=[...new Set(month.map(v=>v.rep))];
+  const durs=month.map(v=>v.durationMin||0);
+  const avgDur=durs.length?Math.round(durs.reduce((a,b)=>a+b,0)/durs.length):0;
+  const scores=month.map(v=>scoreVisit(v).total);
+  const avgScore=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+  const totalStores=S.mfilter.rep==='all'?STORES.length:repStores(S.mfilter.rep).length;
+
+  const k=el('<div class="kgrid"></div>');
+  k.appendChild(el(`<div class="kpi k1"><div class="ic">📈</div><div class="kl">${t('kVisits')}</div><div class="kv">${num(month.length)}</div><div class="kt">${t('kVisitsT')}</div></div>`));
+  k.appendChild(el(`<div class="kpi k2"><div class="ic">👥</div><div class="kl">${t('kReps')}</div><div class="kv">${num(reps.length)} <small>${t('kRepsT')} ${REPS.length}</small></div><div class="kt">${t('live')}</div></div>`));
+  k.appendChild(el(`<div class="kpi k3"><div class="ic">⏱️</div><div class="kl">${t('kTime')}</div><div class="kv">${num(avgDur)}<small> ${t('min')}</small></div><div class="kt">${t('kTimeT')}</div></div>`));
+  k.appendChild(el(`<div class="kpi k4"><div class="ic">✓</div><div class="kl">${t('kCompliance')}</div><div class="kv">${avgScore||'—'}<small>${avgScore?'%':''}</small></div><div class="kt">${t('kComplianceT')}</div></div>`));
+  c.appendChild(k);
+
+  if(!all.length){c.appendChild(emptyState());return c}
+
+  // coverage bar by account
+  const covPanel=el(`<div class="panel card"><div class="ph"><h3>🏪 ${t('storesTtl')}</h3></div><div style="padding:6px 16px 16px"></div></div>`);
+  const covBody=covPanel.querySelector('div:last-child');
+  const accs=S.mfilter.account==='all'?ACCOUNTS:[S.mfilter.account];
+  accs.forEach(a=>{
+    const tot=STORES.filter(s=>s.account===a&&(S.mfilter.rep==='all'||s.rep===S.mfilter.rep)).length;
+    if(!tot)return;
+    const visited=new Set(month.filter(v=>v.account===a).map(v=>v.store)).size;
+    const pct=Math.round(visited/tot*100);
+    covBody.appendChild(el(`<div style="margin:11px 0">
+      <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:6px"><span><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${acc(a)};margin-inline-end:6px"></span>${esc(a)}</span><span>${visited}/${tot} · ${pct}%</span></div>
+      <div class="scorebar"><div class="tr"><div class="fl" style="width:${pct}%;background:${acc(a)}"></div></div></div>
+    </div>`));
+  });
+  c.appendChild(covPanel);
+
+  // top reps mini
+  c.appendChild(repTablePanel(month,true));
+  return c;
+}
+
+function repAgg(data){
+  const map={};
+  data.forEach(v=>{
+    const m=map[v.rep]||(map[v.rep]={rep:v.rep,visits:0,stores:new Set(),dur:0,score:0,last:0,onTime:0});
+    m.visits++;m.stores.add(v.store);m.dur+=v.durationMin||0;
+    const sv=scoreVisit(v);m.score+=sv.total;
+    if(sv.geoPts>0&&v.durationMin>=CFG.minMin)m.onTime++;
+    m.last=Math.max(m.last,v.checkinTs);
+  });
+  return Object.values(map).map(m=>({
+    rep:m.rep,visits:m.visits,stores:m.stores.size,
+    avgDur:Math.round(m.dur/m.visits),avgScore:Math.round(m.score/m.visits),
+    onTime:Math.round(m.onTime/m.visits*100),last:m.last,
+    assigned:repStores(m.rep).length
+  })).sort((a,b)=>b.avgScore-a.avgScore);
+}
+
+function repTablePanel(data,mini){
+  const rows=repAgg(data);
+  const p=el(`<div class="panel card"><div class="ph"><h3>👥 ${t('teamTtl')}</h3><p class="desc">${t('teamDesc')}</p></div><div class="tbl"></div></div>`);
+  const tb=p.querySelector('.tbl');
+  if(!rows.length){tb.appendChild(el(`<div class="empty"><div class="em">📭</div><b>${t('noVisits')}</b></div>`));return p}
+  const table=el(`<table><thead><tr>
+    <th></th><th>${t('thRep')}</th><th>${t('thVisits')}</th><th>${t('thStores')}</th>
+    <th>${t('thAvg')}</th><th>${t('thScore')}</th>${mini?'':`<th>${t('thOnTime')}</th><th>${t('thLast')}</th>`}
+  </tr></thead><tbody></tbody></table>`);
+  const tbody=table.querySelector('tbody');
+  rows.forEach((r,i)=>{
+    const g=i<3?`g${i+1}`:'';
+    const tr=el(`<tr>
+      <td><div class="rank ${g}">${i+1}</div></td>
+      <td><div class="repcell"><div class="av" style="background:${stringColor(r.rep)}">${ini(r.rep)}</div><div><b>${esc(r.rep)}</b><div style="font-size:11px;color:var(--t2)">${r.stores}/${r.assigned} ${t('storesOf')}</div></div></div></td>
+      <td><b>${num(r.visits)}</b></td>
+      <td>${r.stores}/${r.assigned}</td>
+      <td>${r.avgDur} ${t('min')}</td>
+      <td><div class="scorebar"><div class="tr"><div class="fl" style="width:${r.avgScore}%;background:${scoreColor(r.avgScore)}"></div></div><b style="color:${scoreColor(r.avgScore)}">${r.avgScore}</b></div></td>
+      ${mini?'':`<td><span class="tag ${r.onTime>=80?'ok':r.onTime>=60?'warn':'bad'}">${r.onTime}%</span></td><td style="color:var(--t2)">${fmtDate(r.last)}</td>`}
+    </tr>`);
+    tr.style.cursor='pointer';
+    tr.onclick=()=>repDetail(r.rep,data);
+    tbody.appendChild(tr);
+  });
+  tb.appendChild(table);
+  return p;
+}
+
+function MgrTeam(all){
+  const c=el('<div></div>');
+  c.appendChild(Toolbar(all));
+  if(!all.length){c.appendChild(emptyState());return c}
+  c.appendChild(repTablePanel(applyFilter(all),false));
+  return c;
+}
+
+function repDetail(rep,data){
+  const v=data.filter(x=>x.rep===rep).sort((a,b)=>b.checkinTs-a.checkinTs);
+  const agg=repAgg(v)[0]||{visits:0,avgScore:0,avgDur:0,stores:0};
+  openSheet(`
+    <div class="repcell" style="margin-bottom:16px"><div class="av" style="width:48px;height:48px;font-size:17px;border-radius:14px;background:${stringColor(rep)}">${ini(rep)}</div>
+    <div><h3 style="margin:0">${esc(rep)}</h3><div style="color:var(--t2);font-size:13px">${agg.stores}/${repStores(rep).length} ${t('storesOf')} · ${agg.visits} ${t('thVisits').toLowerCase()}</div></div></div>
+    <div class="kgrid" style="margin-bottom:16px">
+      <div class="kpi k1"><div class="kl">${t('thScore')}</div><div class="kv">${agg.avgScore}</div></div>
+      <div class="kpi k3"><div class="kl">${t('thAvg')}</div><div class="kv">${agg.avgDur}<small> ${t('min')}</small></div></div>
+    </div>
+    <div id="repVisits"></div>`);
+  const host=document.getElementById('repVisits');
+  v.slice(0,30).forEach(x=>host.appendChild(visitRow(x)));
+}
+
+function MgrStores(all){
+  const c=el('<div></div>');
+  c.appendChild(Toolbar(all));
+  const data=applyFilter(all);
+  const month=S.mfilter.month==='all'?data.filter(v=>monthKey(v.checkinTs)===curMonth()):data;
+  const byStore={};month.forEach(v=>{(byStore[v.store]||(byStore[v.store]=[])).push(v)});
+  let list=STORES.filter(s=>(S.mfilter.rep==='all'||s.rep===S.mfilter.rep)&&(S.mfilter.account==='all'||s.account===S.mfilter.account));
+  // uncovered first
+  list=list.map(s=>({s,vs:byStore[s.code]||[]})).sort((a,b)=>a.vs.length-b.vs.length);
+
+  const p=el(`<div class="panel card"><div class="ph"><h3>🏪 ${t('storesTtl')}</h3><p class="desc">${t('storesDesc')}</p></div><div class="tbl"></div></div>`);
+  const tb=p.querySelector('.tbl');
+  const table=el(`<table><thead><tr><th>${t('thStore')}</th><th>${t('thAcct')}</th><th>${t('thCity')}</th><th>${t('thRep')}</th><th>${t('thVisitsM')}</th><th>${t('thLastV')}</th><th>${t('thStatus')}</th></tr></thead><tbody></tbody></table>`);
+  const tbody=table.querySelector('tbody');
+  list.forEach(({s,vs})=>{
+    const last=vs.length?Math.max(...vs.map(v=>v.checkinTs)):null;
+    tbody.appendChild(el(`<tr>
+      <td><b>${esc(s.name)}</b></td>
+      <td><span class="tag acct" style="background:${acc(s.account)}22;color:${acc(s.account)}">${esc(s.account)}</span></td>
+      <td>${esc(s.city)}</td>
+      <td>${esc(s.rep)}</td>
+      <td><b>${vs.length}</b></td>
+      <td style="color:var(--t2)">${last?fmtDT(last):'—'}</td>
+      <td>${vs.length?`<span class="tag ok">✓ ${t('covered')}</span>`:`<span class="tag bad">${t('uncovered')}</span>`}</td>
+    </tr>`));
+  });
+  tb.appendChild(table);c.appendChild(p);
+  return c;
+}
+
+function MgrLog(all){
+  const c=el('<div></div>');
+  const head=el(`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1"></div></div>`);
+  c.appendChild(Toolbar(all));
+  const data=applyFilter(all).sort((a,b)=>b.checkinTs-a.checkinTs);
+  const exp=el(`<button class="btn ghost sm">⬇ ${t('export')}</button>`);
+  exp.onclick=()=>exportCSV(data);
+  const bar=el('<div style="display:flex;justify-content:flex-end;margin-bottom:8px"></div>');bar.appendChild(exp);
+  c.appendChild(bar);
+  if(!data.length){c.appendChild(emptyState());return c}
+  const host=el('<div></div>');
+  data.slice(0,200).forEach(v=>host.appendChild(visitRow(v)));
+  c.appendChild(host);
+  return c;
+}
+
+function visitRow(v){
+  const sv=scoreVisit(v);
+  const row=el(`<div class="vrow"><div class="vhead">
+    <div class="av" style="background:${stringColor(v.rep)}">${ini(v.rep)}</div>
+    <div style="min-width:0;flex:1">
+      <div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(v.storeName)}</div>
+      <div style="font-size:11.5px;color:var(--t2)">${esc(v.rep)} · ${fmtDT(v.checkinTs)} · ${v.durationMin} ${t('min')}</div>
+    </div>
+    <span class="tag ${scoreTag(sv.total)}">${sv.total}</span>
+    <div class="go">›</div>
+  </div><div class="vbody"></div></div>`);
+  row.querySelector('.vhead').onclick=()=>{
+    row.classList.toggle('open');
+    const b=row.querySelector('.vbody');
+    if(row.classList.contains('open')&&!b.dataset.filled){b.appendChild(visitBody(v,sv));b.dataset.filled='1'}
+  };
+  return row;
+}
+
+function visitBody(v,sv){
+  const b=el('<div></div>');
+  // meta
+  const g=v.checkinGPS||{};
+  const mapUrl=g.lat?`https://www.google.com/maps?q=${g.lat},${g.lng}`:null;
+  b.appendChild(el(`<div class="vmeta">
+    <div class="m"><span>${t('time')}</span><b>${fmtTime(v.checkinTs)}${v.checkoutTs?' → '+fmtTime(v.checkoutTs):''}</b></div>
+    <div class="m"><span>${t('duration')}</span><b>${v.durationMin} ${t('min')}</b></div>
+    <div class="m"><span>${t('thCity')}</span><b>${esc(v.city)}</b></div>
+    <div class="m"><span>${t('acc')}</span><b>±${g.acc||'—'}m</b></div>
+  </div>`));
+  if(mapUrl){
+    const geoLabel=v.geoStatus==='far'?`<span class="tag bad">${t('flagFar')}</span>`:v.geoStatus==='in'?`<span class="tag ok">✓ ${t('insideGeo')}</span>`:'';
+    b.appendChild(el(`<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap"><a class="btn ghost sm" href="${mapUrl}" target="_blank">🗺️ ${t('viewMap')}${v.distance!=null?' · '+v.distance+'m':''}</a>${geoLabel}</div>`));
+  }
+  // photos
+  const photos=v.photoUrls||v.photos||{};
+  const gal=el('<div class="gallery" style="margin-bottom:14px"></div>');
+  PHOTOS.forEach(p=>{
+    const src=photos[p.id];
+    if(src){
+      const th=el(`<div class="gthumb"><img src="${src}"><div class="cap">${isAr()?p.ar:p.en}</div></div>`);
+      th.onclick=()=>openLb(src,isAr()?p.ar:p.en);
+      gal.appendChild(th);
+    }else{
+      gal.appendChild(el(`<div class="gthumb" style="display:grid;place-items:center;color:var(--coral);font-size:11px;font-weight:700">✕ ${isAr()?p.ar:p.en}</div>`));
+    }
+  });
+  b.appendChild(gal);
+  // activity
+  const cats=(v.cats||[]).map(id=>{const c=CATS.find(x=>x.id===id);return c?(isAr()?c.ar:c.en):id}).join('، ');
+  let act='';
+  if(cats)act+=`<div style="font-size:12.5px;margin-bottom:6px"><b>${t('cats')}:</b> ${esc(cats)}</div>`;
+  if(v.oos)act+=`<div style="font-size:12.5px;margin-bottom:6px;color:var(--coral)"><b>${t('oosTtl')}:</b> ${esc(v.oos)}</div>`;
+  if(v.notes)act+=`<div style="font-size:12.5px;margin-bottom:6px"><b>${t('notesTtl')}:</b> ${esc(v.notes)}</div>`;
+  if(act)b.appendChild(el(`<div class="card" style="padding:12px;margin-bottom:12px">${act}</div>`));
+  // score breakdown
+  b.appendChild(el(`<div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:7px">${t('scoreBreak')}</div>
+  <div class="scoreline">
+    <span class="spt ${sv.photoPts>=50?'y':'n'}">📷 ${t('sPhotos')} ${sv.photoCount}/5</span>
+    <span class="spt ${sv.geoPts>0?'y':'n'}">📍 ${t('sGeo')}</span>
+    <span class="spt ${sv.durPts>=15?'y':'n'}">⏱️ ${t('sDur')}</span>
+    <span class="spt ${v.prices?'y':'n'}">🏷️ ${isAr()?'أسعار':'Prices'}</span>
+    <span class="spt ${v.promo?'y':'n'}">🎯 ${isAr()?'عرض':'Promo'}</span>
+  </div>`));
+  return b;
+}
+
+function emptyState(){return el(`<div class="empty"><div class="em">📭</div><b>${t('noVisits')}</b><span>${t('noVisitsSub')}</span><div style="margin-top:18px"><button class="btn sm" onclick="S.mtab='settings';render()">⚙️ ${t('seed')}</button></div></div>`)}
+
+/* ====================== SETTINGS ====================== */
+function MgrSettings(){
+  const c=el('<div></div>');
+  const p=el(`<div class="panel card pad"><h3>⚙️ ${t('setTtl')}</h3></div>`);
+  // backend
+  p.appendChild(el(`<div class="field" style="margin-top:14px"><label>${t('backendL')}</label><input class="tin" id="be" value="${esc(CFG.backend)}" placeholder="https://script.google.com/macros/s/.../exec"><div class="hintl" style="margin-top:6px">${t('backendHint')}</div></div>`));
+  const row=el('<div style="display:flex;gap:10px"></div>');
+  row.appendChild(el(`<div class="field" style="flex:1"><label>${t('geofenceL')}</label><input class="tin" id="gf" type="number" value="${CFG.geofence}"></div>`));
+  row.appendChild(el(`<div class="field" style="flex:1"><label>${t('minMinL')}</label><input class="tin" id="mm" type="number" value="${CFG.minMin}"></div>`));
+  p.appendChild(row);
+  p.appendChild(el(`<div class="field"><label>${t('mgrPinSet')}</label><input class="tin" id="mp" value="${esc(CFG.mgrPin)}"></div>`));
+  const sb=el(`<button class="btn block">${t('save')}</button>`);
+  sb.onclick=()=>{
+    CFG.backend=p.querySelector('#be').value.trim();
+    CFG.geofence=+p.querySelector('#gf').value||300;
+    CFG.minMin=+p.querySelector('#mm').value||8;
+    CFG.mgrPin=p.querySelector('#mp').value||'2024';
+    saveCfg();toast(t('saved'),'ok');render();
+  };
+  p.appendChild(sb);
+  c.appendChild(p);
+
+  // seed
+  const sp=el(`<div class="panel card pad"><h3>🧪 ${t('seedTtl')}</h3><p class="desc">${t('seedDesc')}</p></div>`);
+  const seedBtn=el(`<button class="btn teal block" style="margin-top:10px">${t('seed')}</button>`);
+  seedBtn.onclick=()=>{seedDemo();toast(t('saved'),'ok');S.mtab='overview';render()};
+  sp.appendChild(seedBtn);
+  const clr=el(`<button class="btn ghost block" style="margin-top:10px;color:var(--coral)">🗑 ${t('clearData')}</button>`);
+  clr.onclick=()=>{if(confirm(t('confirmClear'))){Visits.setLocal([]);localStorage.removeItem('mff_storeGeo');toast(t('cleared'),'ok');render()}};
+  sp.appendChild(clr);
+  c.appendChild(sp);
+
+  c.appendChild(el(`<div class="note" style="margin-top:16px"><span class="i">ℹ️</span><span>${isAr()?'الوضع التجريبي يحفظ على هذا الجهاز فقط. للمشاركة بين كل المناديب والمدير، اربط Google Apps Script (انظر ملف الإعداد).':'Demo mode stores data on this device only. To sync across all reps and the manager, connect Google Apps Script (see setup guide).'}</span></div>`));
+  return c;
+}
+
+/* sample data generator */
+function seedDemo(){
+  const out=[];const now=Date.now();
+  const SVG='data:image/svg+xml;base64,';
+  function ph(label,color){
+    const s=`<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><rect width='400' height='400' fill='${color}'/><rect x='0' y='300' width='400' height='100' fill='rgba(0,0,0,.25)'/><text x='200' y='200' font-family='sans-serif' font-size='34' fill='white' text-anchor='middle' opacity='.85'>${label}</text><text x='200' y='360' font-family='sans-serif' font-size='20' fill='white' text-anchor='middle'>MARS · DEMO</text></svg>`;
+    return SVG+btoa(unescape(encodeURIComponent(s)));
+  }
+  REPS.forEach(rep=>{
+    const stores=repStores(rep);
+    const nVisits=12+Math.floor(Math.random()*16);
+    for(let i=0;i<nVisits;i++){
+      const st=stores[Math.floor(Math.random()*stores.length)];
+      const daysAgo=Math.floor(Math.random()*26);
+      const checkin=now-daysAgo*86400000-Math.floor(Math.random()*8)*3600000;
+      const dur=4+Math.floor(Math.random()*22);
+      const full=Math.random()>0.18;
+      const photos={};
+      PHOTOS.forEach(p=>{if(full||Math.random()>0.3)photos[p.id]=ph(isAr()?p.ar:p.en,acc(st.account))});
+      const geoStatuses=['in','in','in','near','far','ref'];
+      const gs=geoStatuses[Math.floor(Math.random()*geoStatuses.length)];
+      const v={
+        id:'seed_'+rep+'_'+i+'_'+Math.random().toString(36).slice(2,5),
+        rep,store:st.code,storeName:st.name,account:st.account,city:st.city,
+        checkinTs:checkin,checkoutTs:checkin+dur*60000,durationMin:dur,ts:checkin,
+        checkinGPS:{lat:26.3+Math.random(),lng:43.9+Math.random(),acc:5+Math.floor(Math.random()*20)},
+        photos,cats:CATS.filter(()=>Math.random()>0.5).map(c=>c.id),
+        prices:Math.random()>0.25,promo:Math.random()>0.4,
+        oos:Math.random()>0.7?'Galaxy 80g':'',notes:'',geoStatus:gs,
+        distance:gs==='far'?Math.round(CFG.geofence*4+Math.random()*900):Math.round(Math.random()*CFG.geofence),
+        _heavy:true
+      };
+      out.push(v);
+    }
+  });
+  out.sort((a,b)=>b.checkinTs-a.checkinTs);
+  Visits.setLocal(out);
+}
+
+/* ====================== EXPORT ====================== */
+function exportCSV(data){
+  const h=['VisitID','Rep','StoreCode','StoreName','Account','City','CheckinDate','CheckinTime','CheckoutTime','DurationMin','Score','Photos','GeoStatus','DistanceM','Lat','Lng','Prices','Promo','Categories','OOS','Notes'];
+  const rows=data.map(v=>{const sv=scoreVisit(v);const g=v.checkinGPS||{};return[
+    v.id,v.rep,v.store,'"'+(v.storeName||'').replace(/"/g,'""')+'"',v.account,v.city,
+    fmtDate(v.checkinTs),fmtTime(v.checkinTs),v.checkoutTs?fmtTime(v.checkoutTs):'',v.durationMin,sv.total,
+    sv.photoCount+'/5',v.geoStatus||'',v.distance!=null?v.distance:'',g.lat||'',g.lng||'',
+    v.prices?'Y':'N',v.promo?'Y':'N','"'+(v.cats||[]).join('|')+'"','"'+(v.oos||'')+'"','"'+(v.notes||'').replace(/"/g,'""')+'"'
+  ].join(',')});
+  const csv='\ufeff'+h.join(',')+'\n'+rows.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='mars_field_visits_'+curMonth()+'.csv';a.click();
+}
+
+/* ====================== UI UTILS ====================== */
+function stringColor(s){let h=0;for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);const hue=Math.abs(h)%360;return`hsl(${hue},58%,46%)`}
+function openSheet(html){document.getElementById('sheetBody').innerHTML=html;document.getElementById('scrim').classList.add('on');document.getElementById('sheet').classList.add('on')}
+function closeSheet(){document.getElementById('scrim').classList.remove('on');document.getElementById('sheet').classList.remove('on')}
+function openLb(src,cap){document.getElementById('lbImg').src=src;document.getElementById('lbCap').textContent=cap||'';document.getElementById('lb').classList.add('on')}
+function closeLb(){document.getElementById('lb').classList.remove('on')}
+function toggleLang(){S.lang=isAr()?'en':'ar';CFG.lang=S.lang;saveCfg();render()}
+
+/* ====================== BOOT ====================== */
+render();
+</script>
+</body>
+</html>
