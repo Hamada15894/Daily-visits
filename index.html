@@ -340,7 +340,7 @@ let STORES = [{"region": "North", "account": "Panda", "city": "Duwadmi", "code":
 let REPS = [{"key": "Abdelhamid", "name": "Abdelhamid", "full": "Abdelhamid Ramadan Abdelhamid Gabr", "pin": "16907"}, {"key": "Abdelwahed", "name": "Abdelwahed", "full": "Mohamed Abdelwahed Abdelfattah Abouelkhir", "pin": "16906"}, {"key": "Gamal", "name": "Gamal", "full": "Gamal Ali Nasser Babkri", "pin": "4985"}, {"key": "Ibrahim", "name": "Ibrahim", "full": "Ibrahim Alruwayshid", "pin": "18615"}, {"key": "Moustafa", "name": "Moustafa", "full": "Moustafa Mohamed  Yacoub", "pin": "16521"}, {"key": "Ossama", "name": "Ossama", "full": "Ossama Abdelwahab Ibrahim Mosaad", "pin": "12358"}, {"key": "Sarsik", "name": "Sarsik", "full": "Mohamed Mahmoud Mohamed Sarsik", "pin": "10606"}];
 const DEFAULT_MGR_PIN = "2030";
 /* Paste your Apps Script Web App URL here once, then every phone/laptop that opens the app is auto-connected. */
-const DEFAULT_BACKEND = "";
+const DEFAULT_BACKEND = "https://script.google.com/macros/s/AKfycbzEH2CzSYsAAEYCc1qTcd88kWm-Jo8ItJWxTgm9JuCJ6CNhUoaDUlJwCtw94zPKk7Nf/exec";
 /* ========================================== */
 
 const LS = {
@@ -578,7 +578,7 @@ function Auth(){
     <button class="btn" id="go">${I.shield}<span>${t('signin')}</span></button>`;
    form.querySelector('#go').onclick=()=>{const nm=form.querySelector('#name').value,pin=normDigits(form.querySelector('#pin').value);if(!nm)return toast(t('pickName'),'bad');const rep=repByKey(nm);if(!rep||normDigits(rep.pin)!==pin)return toast(t('wrongPin'),'bad');S.role='merch';S.rep=rep.key;S.screen='home';LS.set('mff_session',{role:'merch',rep:rep.key});Promise.resolve(pullConfig()).then(()=>Visits.pull()).then(render);render()};
   }else{
-   form.innerHTML=`<div class="fld"><label>${t('mgrCode')}</label><input class="in" id="mpin" type="tel" inputmode="numeric" placeholder="${t('enterMgr')}" autocomplete="off"></div>
+   form.innerHTML=`<div class="fld"><label>${t('mgrCode')}</label><input class="in" id="mpin" type="text" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${t('enterMgr')}" autocomplete="off"></div>
     <button class="btn" id="go">${I.shield}<span>${t('signin')}</span></button>`;
    form.querySelector('#go').onclick=()=>{const pin=normDigits(form.querySelector('#mpin').value);if(pin!==normDigits(CFG.mgrPin))return toast(t('wrongMgr'),'bad');S.role='manager';S.mtab='overview';LS.set('mff_session',{role:'manager'});Promise.resolve(pullConfig()).then(()=>Visits.pull()).then(render);render()};
   }
