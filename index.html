@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <style>
 :root{
   --ink:#0C0F3A; --ink2:#11164A; --ink3:#171D5E;
@@ -98,6 +99,31 @@ body.auth-mode .app{max-width:none;background:transparent;min-height:100dvh}
 .iconbtn#out{color:var(--bad);border-color:#F7BFC5;background:var(--badbg)}
 .iconbtn.syncon{color:var(--ok);border-color:#B6EBD6;background:var(--okbg)}
 .iconbtn.spinning svg{animation:spin .8s linear infinite}
+.cammodal{position:fixed;inset:0;z-index:200;background:#000;display:flex;flex-direction:column;overflow:hidden}
+.cammodal video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.camtop{position:relative;z-index:2;padding:calc(env(safe-area-inset-top,0px) + 18px) 18px 16px;background:linear-gradient(rgba(0,0,0,.6),transparent);color:#fff}
+.camstore{font-weight:700;font-size:17px;line-height:1.2}
+.camsub{font-size:12px;opacity:.9;margin-top:3px;font-variant-numeric:tabular-nums}
+.camhint{position:relative;z-index:2;margin:10px auto 0;max-width:320px;text-align:center;color:#fff;font-size:12px;background:rgba(0,0,0,.4);padding:7px 14px;border-radius:99px;backdrop-filter:blur(4px)}
+.cambar{margin-top:auto;position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:22px 30px calc(env(safe-area-inset-bottom,0px) + 26px);background:linear-gradient(transparent,rgba(0,0,0,.6))}
+.camshot{width:76px;height:76px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.45);cursor:pointer;box-shadow:0 0 0 2px rgba(0,0,0,.2);transition:transform .08s}
+.camshot:active{transform:scale(.92)}
+.camx{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.2);border:none;color:#fff;display:grid;place-items:center;cursor:pointer}
+.camx svg{width:22px;height:22px}
+body.cam-open{overflow:hidden}
+.chartrow{display:flex;align-items:center;gap:10px;padding:7px 0}
+.chartrow .cl2{width:86px;font-size:12.5px;font-weight:600;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chartrow .cbar{position:relative;flex:1;height:26px;background:var(--mut2);border-radius:8px;overflow:hidden;display:flex;align-items:center;min-width:0}
+.chartrow .cbar i{position:absolute;inset-inline-start:0;top:0;height:100%;background:linear-gradient(90deg,var(--blue),var(--teal));border-radius:8px}
+.chartrow .cbar b{position:relative;z-index:1;color:#fff;font-size:11.5px;font-weight:700;padding-inline-start:9px;text-shadow:0 1px 2px rgba(0,0,0,.28)}
+.chartrow .cv2{width:70px;text-align:end;font-size:11.5px;color:var(--mut);flex-shrink:0}
+.catwrap{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.catcard{background:#F7F8FC;border:1px solid var(--line);border-radius:14px;padding:14px 8px;text-align:center}
+.cate{font-size:26px;line-height:1}
+.catn{font-size:20px;font-weight:800;color:var(--ink);margin-top:4px}
+.catl{font-size:11px;color:var(--mut);margin-top:2px}
+
+
 
 .page{padding:18px;padding-bottom:120px}
 .mgr .page{padding:22px 26px 60px}
@@ -354,6 +380,7 @@ try{const hm=(location.hash||'').match(/sync=([^&]+)/);if(hm){CFG.backend=decode
 let _cfgPushT;
 if(CFG.geofence===600)CFG.geofence=500;
 if(!CFG._mig3){CFG.requireLoc=false;CFG.learn=true;if(CFG.minMin==null||CFG.minMin===8)CFG.minMin=40;CFG._mig3=true;LS.set('mff_cfg',CFG);}
+if(!CFG._langEn){CFG.lang='en';CFG._langEn=true;LS.set('mff_cfg',CFG);}
 function saveCfg(){LS.set('mff_cfg',CFG);if(CFG.backend){clearTimeout(_cfgPushT);_cfgPushT=setTimeout(()=>{try{pushConfig()}catch(e){}},700);}}
 (function(){const os=LS.get('mff_stores',null);if(os&&os.length)STORES=os;const orp=LS.get('mff_reps',null);if(orp&&orp.length)REPS=orp;})();
 function persistData(){LS.set('mff_stores',STORES);LS.set('mff_reps',REPS)}
@@ -376,7 +403,7 @@ const DICT={
   locOk:'Location confirmed',locFar:'Too far from store',locUnset:'Store location not set',firstVisitT:'First visit \u2014 setting location',
   locFarS:'You are {d} away. Move within {r} m of the store to start.',locOkS:'You are {d} from the store.',
   locUnsetS:'First visit \u2014 your current spot becomes this store\u2019s location. The 500 m rule applies from the next visit.',
-  recheck:'Recheck location',mustBeAt:'You must be at the store to begin',gpsoff:'Location access needed',autoExitMsg:'You left the store area \u2014 the visit was submitted automatically.',autoExitTag:'Auto-closed (left area)',monitoring:'Stay in store \u00b7 location is being tracked',noCoordsT:'Store location not set',noCoordsS:'Ask the manager to set this store location (Stores \u25b8 tap the store), then retry.',checkInL:'Check-in',checkOutL:'Check-out',storeCodeL:'Store code',gpsL:'GPS',setLoc:'Set store location',setLocS:'Paste a Maps link or coordinates, or use your current GPS while standing at the store.',useMyLoc:'Use my current location',locSaved:'Location saved',noCoordsYet:'Not set',clearLoc:'Clear location',
+  recheck:'Recheck location',mustBeAt:'You must be at the store to begin',gpsoff:'Location access needed',autoExitMsg:'You left the store area \u2014 the visit was submitted automatically.',autoExitTag:'Auto-closed (left area)',monitoring:'Stay in store \u00b7 location is being tracked',camHint:'Live camera only \u00b7 photo is stamped with location & time',camErr:'Camera unavailable',noCoordsT:'Store location not set',noCoordsS:'Ask the manager to set this store location (Stores \u25b8 tap the store), then retry.',checkInL:'Check-in',checkOutL:'Check-out',storeCodeL:'Store code',gpsL:'GPS',setLoc:'Set store location',setLocS:'Paste a Maps link or coordinates, or use your current GPS while standing at the store.',useMyLoc:'Use my current location',locSaved:'Location saved',noCoordsYet:'Not set',clearLoc:'Clear location',
   gpsHelp:'Allow location for this site, then tap recheck. After the first time it is automatic.',
   photos:'Photo proof',photosSub:'Capture all required photos. Camera only \u2014 no gallery uploads.',
   ph_shelf:'Main shelf',ph_fruity:'Fruity section',ph_back:'Back / stock room',ph_price:'Pricing',ph_promo:'Promotion',
@@ -393,7 +420,7 @@ const DICT={
   overview:'Overview',team:'Team',stores:'Stores',log:'Visit log',alerts:'Alerts',settings:'Settings',
   totalVisits:'Total visits',activeReps:'Active reps',avgTime:'Avg time',compliance:'Compliance',
   visitsToday:'visits today',ofTeam:'of team active',perVisit:'per visit',photoGeo:'photo + geo pass',
-  accountCoverage:'Account coverage',topReps:'Top performers',viewAll:'View all',
+  accountCoverage:'Account coverage',topReps:'Top performers',viewAll:'View all',hoursChart:'Working hours by salesman',catActivity:'Category activity',gpsGapT:'{n} stores have no GPS location yet',gpsGapS:'The 500 m check-in lock only works on stores that have coordinates. Set them so a rep cannot open a store from anywhere else.',gpsFixBtn:'Fix now',
   teamPerf:'Team performance',rep:'Rep',repVisits:'Visits',repCov:'Coverage',repTime:'Avg time',repScore:'Score',
   storeCoverage:'Store coverage',store:'Store',account:'Account',city:'City',lastVisit:'Last visit',status:'Status',
   visited:'Visited',notVisited:'Not visited',never:'Never',
@@ -414,7 +441,7 @@ const DICT={
   updateErr:'Could not read the file. Check the column headers.',dataInfo:'{s} stores \u00b7 {r} reps \u00b7 {c} with coordinates',
   genDemo:'Generate sample visits',genS:'Fill the dashboard with test data',clearAll:'Clear all visit data',clearS:'Cannot be undone',
   confirmClear:'Delete all visit records? This cannot be undone.',cleared:'All visit data cleared',saved:'Saved',
-  synced:'Synced',localOnly:'Local only',notConnected:'Not connected. Set the Sync URL in Settings (or bake it into the app).',connected:'Connected & synced',refreshing:'Refreshing\u2026',demoMode:'Demo mode',demoModeS:'Running on this device. Add a Sync URL in Settings for live team data.',
+  synced:'Synced',exported:'Exported \u2713',localOnly:'Local only',notConnected:'Not connected. Set the Sync URL in Settings (or bake it into the app).',connected:'Connected & synced',refreshing:'Refreshing\u2026',demoMode:'Demo mode',demoModeS:'Running on this device. Add a Sync URL in Settings for live team data.',
   install:'For camera & GPS, open in Safari/Chrome and "Add to Home Screen".',remind:'Remind'},
  ar:{dir:'rtl',appname:'\u0645\u0627\u0631\u0633 \u0641\u064a\u0644\u062f \u0641\u0648\u0631\u0633',tagline:'\u0627\u0644\u062a\u062c\u0627\u0631\u0629 \u0627\u0644\u062d\u062f\u064a\u062b\u0629 \u00b7 \u0627\u0644\u0634\u0645\u0627\u0644',
   heroTitle1:'Mars',heroTitle2:'\u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a \u0627\u0644\u064a\u0648\u0645\u064a\u0629',
@@ -430,7 +457,7 @@ const DICT={
   locOk:'\u062a\u0645 \u062a\u0623\u0643\u064a\u062f \u0627\u0644\u0645\u0648\u0642\u0639',locFar:'\u0628\u0639\u064a\u062f \u0639\u0646 \u0627\u0644\u0645\u062a\u062c\u0631',locUnset:'\u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631 \u063a\u064a\u0631 \u0645\u062d\u062f\u062f',firstVisitT:'\u0623\u0648\u0644 \u0632\u064a\u0627\u0631\u0629 \u2014 \u062c\u0627\u0631\u064d \u062d\u0641\u0638 \u0627\u0644\u0645\u0648\u0642\u0639',
   locFarS:'\u062a\u0628\u0639\u062f {d} \u0639\u0646 \u0627\u0644\u0645\u062a\u062c\u0631. \u0627\u0642\u062a\u0631\u0628 \u0644\u0645\u0633\u0627\u0641\u0629 {r} \u0645\u062a\u0631 \u0644\u0644\u0628\u062f\u0621.',locOkS:'\u062a\u0628\u0639\u062f {d} \u0639\u0646 \u0627\u0644\u0645\u062a\u062c\u0631.',
   locUnsetS:'\u0623\u0648\u0644 \u0632\u064a\u0627\u0631\u0629 \u2014 \u0645\u0648\u0642\u0639\u0643 \u0627\u0644\u062d\u0627\u0644\u064a \u064a\u0635\u0628\u062d \u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631. \u0648\u062a\u064f\u0637\u0628\u0651\u0642 \u0642\u0627\u0639\u062f\u0629 500\u0645 \u0645\u0646 \u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u0627\u0644\u062a\u0627\u0644\u064a\u0629.',
-  recheck:'\u0625\u0639\u0627\u062f\u0629 \u0641\u062d\u0635 \u0627\u0644\u0645\u0648\u0642\u0639',mustBeAt:'\u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062a\u062c\u0631 \u0644\u0644\u0628\u062f\u0621',gpsoff:'\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0645\u0648\u0642\u0639 \u0645\u0637\u0644\u0648\u0628',autoExitMsg:'\u063a\u0627\u062f\u0631\u062a \u0646\u0637\u0627\u0642 \u0627\u0644\u0645\u062a\u062c\u0631 \u2014 \u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',autoExitTag:'\u0625\u063a\u0644\u0627\u0642 \u062a\u0644\u0642\u0627\u0626\u064a (\u0645\u063a\u0627\u062f\u0631\u0629 \u0627\u0644\u0646\u0637\u0627\u0642)',monitoring:'\u0627\u0628\u0642 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062a\u062c\u0631 \u00b7 \u064a\u062a\u0645 \u062a\u062a\u0628\u0639 \u0645\u0648\u0642\u0639\u0643',noCoordsT:'\u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631 \u063a\u064a\u0631 \u0645\u062d\u062f\u062f',noCoordsS:'\u0627\u0637\u0644\u0628 \u0645\u0646 \u0627\u0644\u0645\u062f\u064a\u0631 \u062a\u062d\u062f\u064a\u062f \u0645\u0648\u0642\u0639 \u0647\u0630\u0627 \u0627\u0644\u0645\u062a\u062c\u0631 (\u0627\u0644\u0645\u062a\u0627\u062c\u0631 \u25b8 \u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0627\u0644\u0645\u062a\u062c\u0631) \u062b\u0645 \u0623\u0639\u062f \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629.',checkInL:'\u0648\u0642\u062a \u0627\u0644\u062f\u062e\u0648\u0644',checkOutL:'\u0648\u0642\u062a \u0627\u0644\u062e\u0631\u0648\u062c',storeCodeL:'\u0643\u0648\u062f \u0627\u0644\u0645\u062a\u062c\u0631',gpsL:'\u0627\u0644\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a',setLoc:'\u062a\u062d\u062f\u064a\u062f \u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631',setLocS:'\u0627\u0644\u0635\u0642 \u0631\u0627\u0628\u0637 \u062e\u0631\u0627\u0626\u0637 \u0623\u0648 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a\u060c \u0623\u0648 \u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0648\u0642\u0639\u0643 \u0627\u0644\u062d\u0627\u0644\u064a \u0648\u0623\u0646\u062a \u0641\u064a \u0627\u0644\u0645\u062a\u062c\u0631.',useMyLoc:'\u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0648\u0642\u0639\u064a \u0627\u0644\u062d\u0627\u0644\u064a',locSaved:'\u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u0645\u0648\u0642\u0639',noCoordsYet:'\u063a\u064a\u0631 \u0645\u062d\u062f\u062f',clearLoc:'\u0645\u0633\u062d \u0627\u0644\u0645\u0648\u0642\u0639',
+  recheck:'\u0625\u0639\u0627\u062f\u0629 \u0641\u062d\u0635 \u0627\u0644\u0645\u0648\u0642\u0639',mustBeAt:'\u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062a\u062c\u0631 \u0644\u0644\u0628\u062f\u0621',gpsoff:'\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0645\u0648\u0642\u0639 \u0645\u0637\u0644\u0648\u0628',autoExitMsg:'\u063a\u0627\u062f\u0631\u062a \u0646\u0637\u0627\u0642 \u0627\u0644\u0645\u062a\u062c\u0631 \u2014 \u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',autoExitTag:'\u0625\u063a\u0644\u0627\u0642 \u062a\u0644\u0642\u0627\u0626\u064a (\u0645\u063a\u0627\u062f\u0631\u0629 \u0627\u0644\u0646\u0637\u0627\u0642)',monitoring:'\u0627\u0628\u0642 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062a\u062c\u0631 \u00b7 \u064a\u062a\u0645 \u062a\u062a\u0628\u0639 \u0645\u0648\u0642\u0639\u0643',camHint:'\u0643\u0627\u0645\u064a\u0631\u0627 \u0645\u0628\u0627\u0634\u0631\u0629 \u0641\u0642\u0637 \u00b7 \u062a\u064f\u0637\u0628\u0639 \u0639\u0644\u0649 \u0627\u0644\u0635\u0648\u0631\u0629 \u0627\u0644\u0645\u0648\u0642\u0639 \u0648\u0627\u0644\u0648\u0642\u062a',camErr:'\u0627\u0644\u0643\u0627\u0645\u064a\u0631\u0627 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629',noCoordsT:'\u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631 \u063a\u064a\u0631 \u0645\u062d\u062f\u062f',noCoordsS:'\u0627\u0637\u0644\u0628 \u0645\u0646 \u0627\u0644\u0645\u062f\u064a\u0631 \u062a\u062d\u062f\u064a\u062f \u0645\u0648\u0642\u0639 \u0647\u0630\u0627 \u0627\u0644\u0645\u062a\u062c\u0631 (\u0627\u0644\u0645\u062a\u0627\u062c\u0631 \u25b8 \u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0627\u0644\u0645\u062a\u062c\u0631) \u062b\u0645 \u0623\u0639\u062f \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629.',checkInL:'\u0648\u0642\u062a \u0627\u0644\u062f\u062e\u0648\u0644',checkOutL:'\u0648\u0642\u062a \u0627\u0644\u062e\u0631\u0648\u062c',storeCodeL:'\u0643\u0648\u062f \u0627\u0644\u0645\u062a\u062c\u0631',gpsL:'\u0627\u0644\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a',setLoc:'\u062a\u062d\u062f\u064a\u062f \u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631',setLocS:'\u0627\u0644\u0635\u0642 \u0631\u0627\u0628\u0637 \u062e\u0631\u0627\u0626\u0637 \u0623\u0648 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a\u060c \u0623\u0648 \u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0648\u0642\u0639\u0643 \u0627\u0644\u062d\u0627\u0644\u064a \u0648\u0623\u0646\u062a \u0641\u064a \u0627\u0644\u0645\u062a\u062c\u0631.',useMyLoc:'\u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0648\u0642\u0639\u064a \u0627\u0644\u062d\u0627\u0644\u064a',locSaved:'\u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u0645\u0648\u0642\u0639',noCoordsYet:'\u063a\u064a\u0631 \u0645\u062d\u062f\u062f',clearLoc:'\u0645\u0633\u062d \u0627\u0644\u0645\u0648\u0642\u0639',
   gpsHelp:'\u0627\u0633\u0645\u062d \u0628\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0645\u0648\u0642\u0639 \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0648\u0642\u0639\u060c \u062b\u0645 \u0623\u0639\u062f \u0627\u0644\u0641\u062d\u0635. \u0628\u0639\u062f \u0623\u0648\u0644 \u0645\u0631\u0629 \u064a\u0635\u0628\u062d \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',
   photos:'\u0635\u0648\u0631 \u0627\u0644\u0625\u062b\u0628\u0627\u062a',photosSub:'\u0627\u0644\u062a\u0642\u0637 \u0643\u0644 \u0627\u0644\u0635\u0648\u0631 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629. \u0627\u0644\u0643\u0627\u0645\u064a\u0631\u0627 \u0641\u0642\u0637 \u2014 \u0628\u062f\u0648\u0646 \u0631\u0641\u0639 \u0645\u0646 \u0627\u0644\u0627\u0633\u062a\u0648\u062f\u064a\u0648.',
   ph_shelf:'\u0627\u0644\u0631\u0641 \u0627\u0644\u0631\u0626\u064a\u0633\u064a',ph_fruity:'\u0642\u0633\u0645 \u0641\u0631\u0648\u062a\u064a',ph_back:'\u0627\u0644\u0628\u0627\u0628 \u0627\u0644\u062e\u0644\u0641\u064a / \u0627\u0644\u0645\u062e\u0632\u0646',ph_price:'\u0627\u0644\u0623\u0633\u0639\u0627\u0631',ph_promo:'\u0627\u0644\u0639\u0631\u0636 \u0627\u0644\u062a\u0631\u0648\u064a\u062c\u064a',
@@ -447,7 +474,7 @@ const DICT={
   overview:'\u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629',team:'\u0627\u0644\u0641\u0631\u064a\u0642',stores:'\u0627\u0644\u0645\u062a\u0627\u062c\u0631',log:'\u0633\u062c\u0644 \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a',alerts:'\u0627\u0644\u062a\u0646\u0628\u064a\u0647\u0627\u062a',settings:'\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a',
   totalVisits:'\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a',activeReps:'\u0645\u0646\u0627\u062f\u064a\u0628 \u0646\u0634\u0637\u0648\u0646',avgTime:'\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0648\u0642\u062a',compliance:'\u0627\u0644\u0627\u0644\u062a\u0632\u0627\u0645',
   visitsToday:'\u0632\u064a\u0627\u0631\u0629 \u0627\u0644\u064a\u0648\u0645',ofTeam:'\u0645\u0646 \u0627\u0644\u0641\u0631\u064a\u0642 \u0646\u0634\u0637',perVisit:'\u0644\u0643\u0644 \u0632\u064a\u0627\u0631\u0629',photoGeo:'\u0635\u0648\u0631 + \u0645\u0648\u0642\u0639 \u0645\u0637\u0627\u0628\u0642',
-  accountCoverage:'\u062a\u063a\u0637\u064a\u0629 \u0627\u0644\u062d\u0633\u0627\u0628\u0627\u062a',topReps:'\u0627\u0644\u0623\u0641\u0636\u0644 \u0623\u062f\u0627\u0621\u064b',viewAll:'\u0639\u0631\u0636 \u0627\u0644\u0643\u0644',
+  accountCoverage:'\u062a\u063a\u0637\u064a\u0629 \u0627\u0644\u062d\u0633\u0627\u0628\u0627\u062a',topReps:'\u0627\u0644\u0623\u0641\u0636\u0644 \u0623\u062f\u0627\u0621\u064b',viewAll:'\u0639\u0631\u0636 \u0627\u0644\u0643\u0644',hoursChart:'\u0633\u0627\u0639\u0627\u062a \u0627\u0644\u0639\u0645\u0644 \u0644\u0643\u0644 \u0645\u0646\u062f\u0648\u0628',catActivity:'\u0646\u0634\u0627\u0637 \u0627\u0644\u0641\u0626\u0627\u062a',gpsGapT:'{n} \u0645\u062a\u062c\u0631 \u0628\u062f\u0648\u0646 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a GPS',gpsGapS:'\u0642\u0641\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 (500 \u0645) \u064a\u0639\u0645\u0644 \u0641\u0642\u0637 \u0644\u0644\u0645\u062a\u0627\u062c\u0631 \u0627\u0644\u062a\u064a \u0644\u0647\u0627 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a. \u0627\u0636\u0628\u0637\u0647\u0627 \u062d\u062a\u0649 \u0644\u0627 \u064a\u0633\u062a\u0637\u064a\u0639 \u0627\u0644\u0645\u0646\u062f\u0648\u0628 \u0641\u062a\u062d \u0627\u0644\u0645\u062a\u062c\u0631 \u0645\u0646 \u0623\u064a \u0645\u0643\u0627\u0646 \u0622\u062e\u0631.',gpsFixBtn:'\u0645\u0639\u0627\u0644\u062c\u0629 \u0627\u0644\u0622\u0646',
   teamPerf:'\u0623\u062f\u0627\u0621 \u0627\u0644\u0641\u0631\u064a\u0642',rep:'\u0627\u0644\u0645\u0646\u062f\u0648\u0628',repVisits:'\u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a',repCov:'\u0627\u0644\u062a\u063a\u0637\u064a\u0629',repTime:'\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0648\u0642\u062a',repScore:'\u0627\u0644\u062a\u0642\u064a\u064a\u0645',
   storeCoverage:'\u062a\u063a\u0637\u064a\u0629 \u0627\u0644\u0645\u062a\u0627\u062c\u0631',store:'\u0627\u0644\u0645\u062a\u062c\u0631',account:'\u0627\u0644\u062d\u0633\u0627\u0628',city:'\u0627\u0644\u0645\u062f\u064a\u0646\u0629',lastVisit:'\u0622\u062e\u0631 \u0632\u064a\u0627\u0631\u0629',status:'\u0627\u0644\u062d\u0627\u0644\u0629',
   visited:'\u062a\u0645\u062a \u0632\u064a\u0627\u0631\u062a\u0647',notVisited:'\u0644\u0645 \u064a\u064f\u0632\u0631',never:'\u0623\u0628\u062f\u064b\u0627',
@@ -468,7 +495,7 @@ const DICT={
   updateErr:'\u062a\u0639\u0630\u0651\u0631 \u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0645\u0644\u0641. \u062a\u062d\u0642\u0642 \u0645\u0646 \u0639\u0646\u0627\u0648\u064a\u0646 \u0627\u0644\u0623\u0639\u0645\u062f\u0629.',dataInfo:'{s} \u0645\u062a\u062c\u0631 \u00b7 {r} \u0645\u0646\u062f\u0648\u0628 \u00b7 {c} \u0628\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a',
   genDemo:'\u062a\u0648\u0644\u064a\u062f \u0632\u064a\u0627\u0631\u0627\u062a \u062a\u062c\u0631\u064a\u0628\u064a\u0629',genS:'\u0627\u0645\u0644\u0623 \u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645 \u0628\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u062e\u062a\u0628\u0627\u0631',clearAll:'\u0645\u0633\u062d \u0643\u0644 \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a',clearS:'\u0644\u0627 \u064a\u0645\u0643\u0646 \u0627\u0644\u062a\u0631\u0627\u062c\u0639',
   confirmClear:'\u062d\u0630\u0641 \u0643\u0644 \u0633\u062c\u0644\u0627\u062a \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a\u061f \u0644\u0627 \u064a\u0645\u0643\u0646 \u0627\u0644\u062a\u0631\u0627\u062c\u0639.',cleared:'\u062a\u0645 \u0645\u0633\u062d \u0643\u0644 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a',saved:'\u062a\u0645 \u0627\u0644\u062d\u0641\u0638',
-  synced:'\u0645\u064f\u0632\u0627\u0645\u0646',localOnly:'\u0645\u062d\u0644\u064a \u0641\u0642\u0637',notConnected:'\u063a\u064a\u0631 \u0645\u062a\u0635\u0644. \u0627\u0636\u0628\u0637 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0632\u0627\u0645\u0646\u0629 \u0641\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a.',connected:'\u0645\u062a\u0635\u0644 \u0648\u0645\u064f\u0632\u0627\u0645\u0646',refreshing:'\u062c\u0627\u0631\u064d \u0627\u0644\u062a\u062d\u062f\u064a\u062b\u2026',demoMode:'\u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u062a\u062c\u0631\u064a\u0628\u064a',demoModeS:'\u064a\u0639\u0645\u0644 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632. \u0623\u0636\u0641 \u0631\u0627\u0628\u0637 \u0645\u0632\u0627\u0645\u0646\u0629 \u0641\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0641\u0631\u064a\u0642 \u0627\u0644\u0645\u0628\u0627\u0634\u0631\u0629.',
+  synced:'\u0645\u064f\u0632\u0627\u0645\u0646',exported:'\u062a\u0645 \u0627\u0644\u062a\u0635\u062f\u064a\u0631 \u2713',localOnly:'\u0645\u062d\u0644\u064a \u0641\u0642\u0637',notConnected:'\u063a\u064a\u0631 \u0645\u062a\u0635\u0644. \u0627\u0636\u0628\u0637 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0632\u0627\u0645\u0646\u0629 \u0641\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a.',connected:'\u0645\u062a\u0635\u0644 \u0648\u0645\u064f\u0632\u0627\u0645\u0646',refreshing:'\u062c\u0627\u0631\u064d \u0627\u0644\u062a\u062d\u062f\u064a\u062b\u2026',demoMode:'\u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u062a\u062c\u0631\u064a\u0628\u064a',demoModeS:'\u064a\u0639\u0645\u0644 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632. \u0623\u0636\u0641 \u0631\u0627\u0628\u0637 \u0645\u0632\u0627\u0645\u0646\u0629 \u0641\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0641\u0631\u064a\u0642 \u0627\u0644\u0645\u0628\u0627\u0634\u0631\u0629.',
   install:'\u0644\u0644\u0643\u0627\u0645\u064a\u0631\u0627 \u0648\u0627\u0644\u0645\u0648\u0642\u0639\u060c \u0627\u0641\u062a\u062d \u0641\u064a Safari/Chrome \u062b\u0645 "\u0623\u0636\u0641 \u0625\u0644\u0649 \u0627\u0644\u0634\u0627\u0634\u0629 \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629".',remind:'\u062a\u0630\u0643\u064a\u0631'}
 };
 function t(k,vars){let s=(DICT[CFG.lang]&&DICT[CFG.lang][k])||DICT.en[k]||k;if(vars)for(const v in vars)s=s.replace('{'+v+'}',vars[v]);return s}
@@ -525,6 +552,7 @@ const I={
  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
  globe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
  exit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>',
+ flip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>',
  spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 4 8-8"/><path d="M21 8V4h-4"/></svg>',
  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>'
 };
@@ -764,8 +792,8 @@ function stepPhotos(body,foot){
  const grid=el('<div class="pgrid"></div>');
  PHOTO_KEYS.forEach(([k,lbl])=>{const has=S.visit.photos[k];const isReq=req[k];
   const tag=has?`<span class="badge">${I.check}</span>`:(isReq?`<span class="req">${t('required')}</span>`:`<span class="req" style="background:var(--mut2)">${t('optional')}</span>`);
-  const cell=el(`<label class="pcell ${has?'full':''}">${has?`<img src="${has}">`:''}${tag}${has?'':`<div class="pi">${I.cam}</div><div class="pl">${t(lbl)}</div>`}<input type="file" accept="image/*" capture="environment"></label>`);
-  cell.querySelector('input').onchange=e=>handlePhoto(e,k);grid.appendChild(cell)});
+  const cell=el(`<button type="button" class="pcell ${has?'full':''}">${has?`<img src="${has}">`:''}${tag}${has?'':`<div class="pi">${I.cam}</div><div class="pl">${t(lbl)}</div>`}</button>`);
+  cell.onclick=()=>openCamera(k);grid.appendChild(cell)});
  body.appendChild(grid);
  foot.innerHTML='';
  const missing=requiredKeysFor(S.visit.rep).filter(k=>!S.visit.photos[k]).length;
@@ -777,6 +805,33 @@ function handlePhoto(e,key){
  const fr=new FileReader();
  fr.onload=()=>{const img=new Image();img.onload=()=>{const max=1100,sc=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=img.width*sc;c.height=img.height*sc;c.getContext('2d').drawImage(img,0,0,c.width,c.height);S.visit.photos[key]=c.toDataURL('image/jpeg',0.6);Visits.update(S.visit.id,{photos:S.visit.photos});drawVisit();};img.src=fr.result;};
  fr.readAsDataURL(f);
+}
+function fallbackPick(key){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.setAttribute('capture','environment');inp.onchange=e=>handlePhoto(e,key);inp.click();}
+function openCamera(key){
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){return fallbackPick(key);}
+ const v0=S.visit;
+ const m=el(`<div class="cammodal"><video id="camv" autoplay playsinline muted></video><div class="camtop"><div class="camstore">${esc(v0.storeName)}</div><div class="camsub" id="camgps"></div></div><div class="camhint">${t('camHint')}</div><div class="cambar"><button class="camx" id="camx">${I.x}</button><button class="camshot" id="shot" aria-label="capture"></button><button class="camx" id="camflip">${I.flip}</button></div></div>`);
+ OV.appendChild(m);document.body.classList.add('cam-open');
+ const vid=m.querySelector('#camv');let stream=null,facing='environment';
+ m.querySelector('#camgps').textContent=(v0.lat!=null?v0.lat.toFixed(5)+', '+v0.lng.toFixed(5):t('gpsL'))+' \u00b7 '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+ function close(){if(stream)stream.getTracks().forEach(t=>t.stop());document.body.classList.remove('cam-open');m.remove();}
+ async function start(){try{if(stream)stream.getTracks().forEach(t=>t.stop());stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing}},audio:false});vid.srcObject=stream;}catch(e){close();toast(t('camErr'),'bad');fallbackPick(key);}}
+ m.querySelector('#camx').onclick=close;m.onclick=e=>{if(e.target===m)close()};
+ m.querySelector('#camflip').onclick=()=>{facing=facing==='environment'?'user':'environment';start();};
+ m.querySelector('#shot').onclick=()=>{
+  if(!vid.videoWidth){toast(t('camErr'),'bad');return;}
+  const max=1100,sc=Math.min(1,max/Math.max(vid.videoWidth,vid.videoHeight));
+  const c=document.createElement('canvas');c.width=Math.round(vid.videoWidth*sc);c.height=Math.round(vid.videoHeight*sc);
+  const ctx=c.getContext('2d');ctx.drawImage(vid,0,0,c.width,c.height);
+  const pad=Math.round(c.width*0.028);const fz=Math.max(13,Math.round(c.width*0.030));
+  const lines=[v0.storeName,(v0.lat!=null?'GPS '+v0.lat.toFixed(5)+', '+v0.lng.toFixed(5):''),new Date().toLocaleString()+'  \u00b7  '+(v0.repName||v0.rep)].filter(Boolean);
+  ctx.font='600 '+fz+'px Inter,Arial,sans-serif';ctx.textBaseline='alphabetic';
+  const bh=lines.length*(fz+7)+pad;const grd=ctx.createLinearGradient(0,c.height-bh,0,c.height);grd.addColorStop(0,'rgba(0,0,0,0)');grd.addColorStop(1,'rgba(0,0,0,.74)');
+  ctx.fillStyle=grd;ctx.fillRect(0,c.height-bh,c.width,bh);
+  ctx.fillStyle='#fff';let y=c.height-pad;for(let i=lines.length-1;i>=0;i--){ctx.fillText(lines[i],pad,y);y-=(fz+7);}
+  S.visit.photos[key]=c.toDataURL('image/jpeg',0.6);Visits.update(S.visit.id,{photos:S.visit.photos});close();drawVisit();
+ };
+ start();
 }
 const CATS=[['choco','\ud83c\udf6b'],['ice','\ud83c\udf66'],['cake','\ud83c\udf70'],['pet','\ud83d\udc3e'],['fruity','\ud83c\udf6c'],['gum','\ud83e\udee7']];
 function stepActivity(body,foot){
@@ -864,6 +919,18 @@ function mOverview(c){
  stats.slice(0,5).forEach((s,i)=>{const cls=s.score>=80?'sp-hi':s.score>=55?'sp-md':'sp-lo';tp.appendChild(el(`<div class="row" style="padding:11px 0;border-bottom:1px solid var(--line)"><div class="rankn">${i+1}</div><div class="av-s" style="background:${stringColor(s.rep.name)}">${esc(ini(s.rep.name))}</div><div class="grow"><div style="font-weight:600;font-size:13.5px">${esc(s.rep.name)}</div><div class="xs mut">${s.visits} ${t('visits')} \u00b7 ${s.cov}% ${t('coverage')}</div></div><span class="score-pill ${cls}">${s.score}</span></div>`))});
  topPanel.querySelector('#va').onclick=()=>{S.mtab='team';renderManager()};
  g2.appendChild(topPanel);c.appendChild(g2);
+ const hoursPanel=el(`<div class="panel" style="margin-top:18px"><div class="ph"><div class="pt">${t('hoursChart')}</div><span class="sm mut">${t('month')}</span></div><div class="pb" id="hpb"></div></div>`);
+ const repHours=REPS.map(r=>{const vs=month.filter(v=>v.rep===r.key);const mins=vs.reduce((a,b)=>a+(b.durationMin||0),0);return{name:r.name,hours:mins/60,visits:vs.length}}).sort((a,b)=>b.hours-a.hours);
+ const maxH=Math.max(1,...repHours.map(r=>r.hours));const hpb=hoursPanel.querySelector('#hpb');
+ repHours.forEach(r=>{const pct=Math.max(3,Math.round(r.hours/maxH*100));hpb.appendChild(el(`<div class="chartrow"><div class="cl2">${esc(r.name)}</div><div class="cbar"><i style="width:${pct}%"></i><b>${r.hours.toFixed(1)}h</b></div><div class="cv2">${r.visits} ${t('visits')}</div></div>`))});
+ c.appendChild(hoursPanel);
+ const catCount={};month.forEach(v=>(v.cats||[]).forEach(k=>catCount[k]=(catCount[k]||0)+1));
+ const catPanel=el(`<div class="panel" style="margin-top:18px"><div class="ph"><div class="pt">${t('catActivity')}</div><span class="sm mut">${t('month')}</span></div><div class="pb"><div class="catwrap"></div></div></div>`);
+ const cw=catPanel.querySelector('.catwrap');
+ CATS.forEach(([k,e])=>{const n=catCount[k]||0;cw.appendChild(el(`<div class="catcard"><div class="cate">${e}</div><div class="catn">${n}</div><div class="catl">${t('cat_'+k)}</div></div>`))});
+ c.appendChild(catPanel);
+ const noGps=STORES.filter(s=>s.lat==null).length;
+ if(noGps>0){const gb=el(`<div class="alertban red" style="margin-top:18px"><div class="ab-ic">${I.loc}</div><div class="grow"><div class="ab-t">${t('gpsGapT',{n:noGps})}</div><div class="ab-s">${t('gpsGapS')}</div></div><button class="minib" id="gpsfix" style="background:var(--blue);color:#fff">${t('gpsFixBtn')}</button></div>`);gb.querySelector('#gpsfix').onclick=()=>{S.mtab='settings';renderManager()};c.appendChild(gb);}
  if(!CFG.backend)c.appendChild(el(`<div class="alertban amber" style="margin-top:18px"><div class="ab-ic">${I.spark}</div><div class="grow"><div class="ab-t">${t('demoMode')}</div><div class="ab-s">${t('demoModeS')}</div></div></div>`));
 }
 function mTeam(c){
@@ -1071,29 +1138,66 @@ async function resolveLocations(btn){
  }catch(e){toast(t('updateErr'),'bad');btn.innerHTML=orig;btn.style.pointerEvents=''}
 }
 
-/* ============ EXCEL EXPORT ============ */
-function exportXlsx(){
+/* ============ EXCEL EXPORT (styled, ExcelJS) ============ */
+function fmtDurHM(min){min=Math.max(0,Math.round(min||0));const h=Math.floor(min/60),m=min%60;return h?(m?h+'h '+m+'m':h+'h'):m+'m';}
+function _xlThin(){const c={argb:'FFE3E5F0'};return {top:{style:'thin',color:c},left:{style:'thin',color:c},bottom:{style:'thin',color:c},right:{style:'thin',color:c}};}
+function _xlScore(cell){const n=Number(cell.value)||0;let bg='FFEAF7EF',fg='FF1E7E45';if(n<60){bg='FFFDEAEC';fg='FFD32F4A';}else if(n<85){bg='FFFFF6E6';fg='FFB7791F';}cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};cell.font={bold:true,color:{argb:fg}};cell.alignment={horizontal:'center',vertical:'middle'};}
+function _xlStyle(ws){const BLUE='FF1E22C4',BAND='FFF4F5FD',WHITE='FFFFFFFF';
+ const hr=ws.getRow(1);hr.height=24;hr.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:BLUE}};c.font={bold:true,color:{argb:WHITE},size:11};c.alignment={vertical:'middle',horizontal:'center',wrapText:true};c.border=_xlThin();});
+ ws.views=[{state:'frozen',ySplit:1}];
+ for(let r=2;r<=ws.rowCount;r++){const row=ws.getRow(r);row.eachCell(c=>{c.border=_xlThin();c.alignment=Object.assign({vertical:'middle'},c.alignment||{});});if(r%2===1){row.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:BAND}};});}}
+}
+async function exportXlsx(){
+ if(typeof ExcelJS==='undefined'){toast(t('updateErr'),'bad');return;}
  const all=Visits.all().filter(v=>v.status!=='open');
- const stats=repStats();const L=CFG.lang;const wb=XLSX.utils.book_new();
- const p1=[[L==='ar'?'\u0627\u0644\u0645\u0646\u062f\u0648\u0628':'Rep',L==='ar'?'\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644':'Full name',L==='ar'?'\u0645\u062a\u0627\u062c\u0631 \u0645\u062e\u0635\u0635\u0629':'Stores assigned',L==='ar'?'\u0645\u062a\u0627\u062c\u0631 \u0645\u063a\u0637\u0651\u0627\u0629':'Stores covered',L==='ar'?'\u0627\u0644\u062a\u063a\u0637\u064a\u0629 %':'Coverage %',L==='ar'?'\u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a (\u0627\u0644\u0634\u0647\u0631)':'Visits (month)',L==='ar'?'\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0648\u0642\u062a (\u062f)':'Avg time (min)',L==='ar'?'\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u062a\u0642\u064a\u064a\u0645':'Avg score',L==='ar'?'\u0632\u064a\u0627\u0631\u0627\u062a \u0628\u0639\u064a\u062f\u0629':'Far-flagged']];
- stats.forEach(s=>p1.push([s.rep.key,(REPS.find(r=>r.key===s.rep.key)||{}).full||s.rep.name,s.total,s.covered,s.cov,s.visits,s.avgTime,s.score,s.far]));
- const ws1=XLSX.utils.aoa_to_sheet(p1);ws1['!cols']=[{wch:14},{wch:30},{wch:14},{wch:14},{wch:12},{wch:15},{wch:14},{wch:13},{wch:12}];
- XLSX.utils.book_append_sheet(wb,ws1,L==='ar'?'\u0625\u0646\u062a\u0627\u062c\u064a\u0629 \u0627\u0644\u0645\u0646\u0627\u062f\u064a\u0628':'Rep Productivity');
- const A=x=>L==='ar'?x[0]:x[1];
- const h2=[A(['\u0627\u0644\u062a\u0627\u0631\u064a\u062e','Date']),A(['\u0648\u0642\u062a \u0627\u0644\u062f\u062e\u0648\u0644','Check-in']),A(['\u0648\u0642\u062a \u0627\u0644\u062e\u0631\u0648\u062c','Check-out']),A(['\u0627\u0644\u0645\u0646\u062f\u0648\u0628','Salesman']),A(['\u0627\u0644\u0645\u062a\u062c\u0631','Store']),A(['\u0627\u0644\u0643\u0648\u062f','Code']),A(['\u0627\u0644\u062d\u0633\u0627\u0628','Account']),A(['\u0627\u0644\u0645\u062f\u064a\u0646\u0629','City']),A(['\u0646\u0648\u0639 \u0627\u0644\u0632\u064a\u0627\u0631\u0629','Visit type']),A(['\u0642\u064a\u0645\u0629 \u0627\u0644\u0623\u0648\u0631\u062f\u0631','Order value']),A(['\u0648\u062d\u062f\u0627\u062a','Units']),A(['\u0627\u0644\u0645\u062f\u0629 (\u062f)','Duration (min)']),A(['\u0627\u0644\u0645\u0633\u0627\u0641\u0629 (\u0645)','Distance (m)']),A(['\u062e\u0627\u0631\u062c \u0627\u0644\u0646\u0637\u0627\u0642','Out of range']),A(['\u0625\u063a\u0644\u0627\u0642 \u062a\u0644\u0642\u0627\u0626\u064a','Auto-closed']),A(['\u062e\u0637 \u0627\u0644\u0639\u0631\u0636','Lat']),A(['\u062e\u0637 \u0627\u0644\u0637\u0648\u0644','Lng']),A(['\u0635\u0648\u0631','Photos']),A(['\u0623\u0633\u0639\u0627\u0631','Prices']),A(['\u0639\u0631\u0636','Promo']),A(['\u0646\u0648\u0627\u0642\u0635','OOS']),A(['\u0627\u0644\u062a\u0642\u064a\u064a\u0645','Score']),A(['\u0645\u0644\u0627\u062d\u0638\u0627\u062a','Notes'])];
- const p2=[h2];
- all.slice().sort((a,b)=>new Date(b.start)-new Date(a.start)).forEach(v=>{p2.push([new Date(v.start),timeStr(v.start),v.end?timeStr(v.end):'',v.repName||v.rep,v.storeName,v.code||'',v.account,v.city,(v.visitType==='order'?A(['\u0623\u0648\u0631\u062f\u0631','Order']):A(['\u062a\u0641\u0642\u062f\u064a\u0629','Audit'])),v.orderValue||'',v.orderCases||'',v.durationMin||0,v.dist==null?'':v.dist,v.far?'YES':'',v.autoExit?'YES':'',v.lat!=null?v.lat:'',v.lng!=null?v.lng:'',Object.keys(v.photos||{}).length,v.prices?'\u2713':'',v.promo?'\u2713':'',v.oos||'',v.score||0,v.notes||''])});
- const ws2=XLSX.utils.aoa_to_sheet(p2);
- for(let R=1;R<p2.length;R++){const cell=ws2[XLSX.utils.encode_cell({r:R,c:0})];if(cell){cell.t='d';cell.z='yyyy-mm-dd'}}
- ws2['!cols']=[{wch:12},{wch:11},{wch:11},{wch:22},{wch:30},{wch:11},{wch:11},{wch:13},{wch:11},{wch:13},{wch:9},{wch:13},{wch:13},{wch:13},{wch:12},{wch:12},{wch:11},{wch:11},{wch:8},{wch:8},{wch:8},{wch:16},{wch:8},{wch:28}];
- XLSX.utils.book_append_sheet(wb,ws2,L==='ar'?'\u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a':'Visits Detail');
+ const stats=repStats();const L=CFG.lang;const A=x=>L==='ar'?x[0]:x[1];
+ const wb=new ExcelJS.Workbook();wb.creator='Mars Field Force';
+
+ /* 1) Rep Productivity */
+ const s1=wb.addWorksheet(A(['إنتاجية المناديب','Rep Productivity']));
+ s1.columns=[{header:A(['المندوب','Salesman']),width:18},{header:A(['الاسم الكامل','Full name']),width:28},{header:A(['متاجر مخصصة','Assigned']),width:12},{header:A(['متاجر مغطّاة','Covered']),width:12},{header:A(['التغطية %','Coverage %']),width:12},{header:A(['الزيارات (الشهر)','Visits']),width:13},{header:A(['متوسط الوقت (د)','Avg min']),width:11},{header:A(['متوسط التقييم','Avg score']),width:12},{header:A(['زيارات بعيدة','Far']),width:9}];
+ stats.forEach(s=>s1.addRow([s.rep.key,(REPS.find(r=>r.key===s.rep.key)||{}).full||s.rep.name,s.total,s.covered,s.cov,s.visits,s.avgTime,s.score,s.far]));
+ _xlStyle(s1);for(let r=2;r<=s1.rowCount;r++)_xlScore(s1.getRow(r).getCell(8));
+
+ /* 2) Visits Detail */
+ const s2=wb.addWorksheet(A(['تفاصيل الزيارات','Visits Detail']));
+ s2.columns=[{header:A(['التاريخ','Date']),width:13},{header:A(['وقت الدخول','Check-in']),width:11},{header:A(['وقت الخروج','Check-out']),width:11},{header:A(['مدة الزيارة','Duration']),width:11},{header:A(['المندوب','Salesman']),width:22},{header:A(['المتجر','Store']),width:30},{header:A(['الكود','Code']),width:11},{header:A(['الحساب','Account']),width:12},{header:A(['المدينة','City']),width:13},{header:A(['النوع','Type']),width:10},{header:A(['قيمة الأوردر','Order value']),width:12},{header:A(['وحدات','Units']),width:8},{header:A(['المسافة (م)','Distance']),width:11},{header:A(['خارج النطاق','Out of range']),width:12},{header:A(['إغلاق تلقائي','Auto-closed']),width:12},{header:A(['خط العرض','Lat']),width:11},{header:A(['خط الطول','Lng']),width:11},{header:A(['صور','Photos']),width:7},{header:A(['أسعار','Prices']),width:7},{header:A(['عرض','Promo']),width:7},{header:A(['نواقص','OOS']),width:16},{header:A(['التقييم','Score']),width:8},{header:A(['ملاحظات','Notes']),width:28}];
+ all.slice().sort((a,b)=>new Date(b.start)-new Date(a.start)).forEach(v=>{
+  const ov=(v.orderValue!==''&&v.orderValue!=null&&!isNaN(+v.orderValue))?+v.orderValue:(v.orderValue||'');
+  const row=s2.addRow([new Date(v.start),timeStr(v.start),v.end?timeStr(v.end):'',fmtDurHM(v.durationMin),v.repName||v.rep,v.storeName,v.code||'',v.account,v.city,(v.visitType==='order'?A(['أوردر','Order']):A(['تفقدية','Audit'])),ov,v.orderCases||'',v.dist==null?'':Math.round(v.dist),v.far?'YES':'',v.autoExit?'YES':'',v.lat!=null?+(+v.lat).toFixed(5):'',v.lng!=null?+(+v.lng).toFixed(5):'',Object.keys(v.photos||{}).length,v.prices?'✓':'',v.promo?'✓':'',v.oos||'',v.score||0,v.notes||'']);
+  row.getCell(1).numFmt='dd-mmm-yyyy';
+ });
+ _xlStyle(s2);
+ for(let r=2;r<=s2.rowCount;r++){_xlScore(s2.getRow(r).getCell(22));const fc=s2.getRow(r).getCell(14);if(String(fc.value)==='YES')fc.font={bold:true,color:{argb:'FFD32F4A'}};const ac=s2.getRow(r).getCell(15);if(String(ac.value)==='YES')ac.font={bold:true,color:{argb:'FFD32F4A'}};}
+
+ /* 3) Daily Hours */
+ const s3=wb.addWorksheet(A(['ساعات العمل اليومية','Daily Hours']));
+ s3.columns=[{header:A(['التاريخ','Date']),width:13},{header:A(['المندوب','Salesman']),width:22},{header:A(['عدد الزيارات','Visits']),width:11},{header:A(['أول دخول','First in']),width:11},{header:A(['آخر خروج','Last out']),width:11},{header:A(['ساعات داخل المتاجر','In-store hrs']),width:15},{header:A(['امتداد يوم العمل','Workday span']),width:15}];
+ const daily={};all.forEach(v=>{const day=ymd(v.start);const key=day+'|'+(v.repName||v.rep);if(!daily[key])daily[key]={day,rep:(v.repName||v.rep),visits:[],mins:0};daily[key].visits.push(v);daily[key].mins+=(v.durationMin||0);});
+ Object.values(daily).sort((a,b)=>(b.day.localeCompare(a.day))||a.rep.localeCompare(b.rep)).forEach(d=>{
+  const so=d.visits.slice().sort((x,y)=>new Date(x.start)-new Date(y.start));const first=so[0].start;const lv=so[so.length-1];const last=lv.end||lv.start;
+  const span=Math.max(0,Math.round((new Date(last)-new Date(first))/60000));
+  const row=s3.addRow([new Date(d.day),d.rep,d.visits.length,timeStr(first),timeStr(last),+(d.mins/60).toFixed(2),fmtDurHM(span)]);
+  row.getCell(1).numFmt='dd-mmm-yyyy';row.getCell(6).numFmt='0.00';
+ });
+ _xlStyle(s3);
+
+ /* 4) Store Coverage */
+ const s4=wb.addWorksheet(A(['تغطية المتاجر','Store Coverage']));
+ s4.columns=[{header:A(['المتجر','Store']),width:32},{header:A(['الحساب','Account']),width:12},{header:A(['المدينة','City']),width:14},{header:A(['المندوب','Salesman']),width:16},{header:A(['زيارات الشهر','Visits']),width:13},{header:A(['آخر زيارة','Last visit']),width:13},{header:A(['الموقع','GPS']),width:10},{header:A(['الحالة','Status']),width:14}];
  const month=all.filter(v=>sameMonth(v.start,Date.now()));const byKey={};month.forEach(v=>{(byKey[v.storeKey]=byKey[v.storeKey]||[]).push(v)});
- const h3=[L==='ar'?'\u0627\u0644\u0645\u062a\u062c\u0631':'Store',L==='ar'?'\u0627\u0644\u062d\u0633\u0627\u0628':'Account',L==='ar'?'\u0627\u0644\u0645\u062f\u064a\u0646\u0629':'City',L==='ar'?'\u0627\u0644\u0645\u0646\u062f\u0648\u0628':'Rep',L==='ar'?'\u0632\u064a\u0627\u0631\u0627\u062a \u0627\u0644\u0634\u0647\u0631':'Visits (month)',L==='ar'?'\u0622\u062e\u0631 \u0632\u064a\u0627\u0631\u0629':'Last visit',L==='ar'?'\u0627\u0644\u062d\u0627\u0644\u0629':'Status'];
- const p3=[h3];
- STORES.forEach(s=>{const vs=byKey[storeKey(s)]||[];const last=vs.length?vs.slice().sort((a,b)=>new Date(b.start)-new Date(a.start))[0].start:null;p3.push([s.name,s.account,s.city,s.rep,vs.length,last?ymd(last):'',vs.length?(L==='ar'?'\u062a\u0645\u062a \u0632\u064a\u0627\u0631\u062a\u0647':'Visited'):(L==='ar'?'\u0644\u0645 \u064a\u064f\u0632\u0631':'Not visited')])});
- const ws3=XLSX.utils.aoa_to_sheet(p3);ws3['!cols']=[{wch:32},{wch:12},{wch:14},{wch:14},{wch:14},{wch:13},{wch:13}];
- XLSX.utils.book_append_sheet(wb,ws3,L==='ar'?'\u062a\u063a\u0637\u064a\u0629 \u0627\u0644\u0645\u062a\u0627\u062c\u0631':'Store Coverage');
- XLSX.writeFile(wb,'MarsFieldForce_'+ymd(Date.now())+'.xlsx');
+ STORES.forEach(s=>{const vs=byKey[storeKey(s)]||[];const last=vs.length?vs.slice().sort((a,b)=>new Date(b.start)-new Date(a.start))[0].start:null;
+  const row=s4.addRow([s.name,s.account,s.city,s.rep,vs.length,last?new Date(last):'',s.lat!=null?'✓':'—',vs.length?A(['تمت زيارته','Visited']):A(['لم يُزر','Not visited'])]);
+  if(last)row.getCell(6).numFmt='dd-mmm-yyyy';
+  const st=row.getCell(8);if(vs.length){st.font={bold:true,color:{argb:'FF1E7E45'}};}else{st.font={color:{argb:'FFB23A4A'}};}
+  const gp=row.getCell(7);gp.alignment={horizontal:'center'};gp.font={bold:true,color:{argb:s.lat!=null?'FF1E7E45':'FFB23A4A'}};
+ });
+ _xlStyle(s4);
+
+ const buf=await wb.xlsx.writeBuffer();
+ const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='MarsFieldForce_'+ymd(Date.now())+'.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+ toast(t('exported')||'Exported','ok');
 }
 
 /* ============ DEMO SEED ============ */
