@@ -47,7 +47,7 @@ h1,h2,h3,.disp{font-family:var(--disp);letter-spacing:-.02em}
 .tnum{font-variant-numeric:tabular-nums}
 .elip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.auth{position:fixed;inset:0;z-index:50;overflow-y:auto;background:
+.auth{min-height:100vh;min-height:100dvh;width:100%;background:
   radial-gradient(1200px 600px at 80% -10%,rgba(0,212,200,.22),transparent 60%),
   radial-gradient(900px 500px at -10% 110%,rgba(59,64,255,.30),transparent 55%),
   var(--ink);
@@ -84,6 +84,10 @@ select.in option{color:#111}
 .langpill svg{width:15px;height:15px}
 html[dir=ltr] .langpill{right:20px} html[dir=rtl] .langpill{left:20px}
 .authfoot{margin-top:24px;font-size:12px;color:rgba(255,255,255,.42);text-align:center}
+body.auth-mode{background:var(--ink)}
+body.auth-mode .app{max-width:none;background:transparent;min-height:100dvh}
+.auth-inner{width:100%;max-width:460px;margin:0 auto;position:relative;z-index:1}
+@media(min-width:760px){.auth{align-items:center}}
 
 .top{position:sticky;top:0;z-index:40;background:rgba(246,247,251,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:14px 18px;padding-top:max(14px,env(safe-area-inset-top))}
 .top .av{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-family:var(--disp);font-weight:700;font-size:15px;flex:none}
@@ -537,7 +541,7 @@ function signout(){S.role=null;S.rep=null;LS.del('mff_session');render()}
 
 function render(){
  applyDir();
- document.body.className=S.role==='manager'?'mgr':'';
+ document.body.className=!S.role?'auth-mode':(S.role==='manager'?'mgr':'');
  if(!S.role){APP.innerHTML='';OV.innerHTML='';APP.appendChild(Auth());return}
  if(S.role==='manager'){renderManager();return}
  renderRep();
@@ -548,11 +552,13 @@ function Auth(){
  let role='merch';
  const v=el(`<div class="auth">
   <button class="langpill" id="lang">${I.globe}<span>${CFG.lang==='en'?'\u0627\u0644\u0639\u0631\u0628\u064a\u0629':'English'}</span></button>
-  <div class="brandmark"><div class="bm-logo">M</div><div><div class="bm-t">${t('appname')}</div><div class="bm-s">${t('tagline')}</div></div></div>
-  <h1 class="htitle">${t('heroTitle1')} <b>${t('heroTitle2')}</b></h1>
-  <div class="seg" id="seg"><button data-r="merch" class="on">${I.user}<span>${t('merchandiser')}</span></button><button data-r="manager">${I.shield}<span>${t('manager')}</span></button></div>
-  <div id="form"></div>
-  <div class="authfoot">${t('footer')}</div></div>`);
+  <div class="auth-inner">
+   <div class="brandmark"><div class="bm-logo">M</div><div><div class="bm-t">${t('appname')}</div><div class="bm-s">${t('tagline')}</div></div></div>
+   <h1 class="htitle">${t('heroTitle1')} <b>${t('heroTitle2')}</b></h1>
+   <div class="seg" id="seg"><button data-r="merch" class="on">${I.user}<span>${t('merchandiser')}</span></button><button data-r="manager">${I.shield}<span>${t('manager')}</span></button></div>
+   <div id="form"></div>
+   <div class="authfoot">${t('footer')}</div>
+  </div></div>`);
  v.querySelector('#lang').onclick=()=>{CFG.lang=CFG.lang==='en'?'ar':'en';saveCfg();render()};
  let _taps=0,_tt;const _logo=v.querySelector('.bm-logo');
  if(_logo)_logo.onclick=()=>{_taps++;clearTimeout(_tt);_tt=setTimeout(()=>_taps=0,1500);if(_taps>=5){_taps=0;const p=prompt(t('mgrCode'));if(p&&normDigits(p)===normDigits(CFG.mgrPin)){S.role='manager';S.mtab='settings';S.focusData=true;LS.set('mff_session',{role:'manager'});Visits.pull().then(render);render();}else if(p){toast(t('wrongMgr'),'bad');}}};
