@@ -91,6 +91,7 @@ html[dir=ltr] .langpill{right:20px} html[dir=rtl] .langpill{left:20px}
 .top .rl{font-size:11.5px;color:var(--mut);font-weight:500;letter-spacing:.04em}
 .iconbtn{width:40px;height:40px;border-radius:12px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;color:var(--mut);box-shadow:var(--sh);flex:none}
 .iconbtn svg{width:20px;height:20px}
+.iconbtn#out{color:var(--bad);border-color:#F7BFC5;background:var(--badbg)}
 
 .page{padding:18px;padding-bottom:120px}
 .mgr .page{padding:22px 26px 60px}
@@ -339,11 +340,13 @@ const LS = {
   set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},
   del:(k)=>{try{localStorage.removeItem(k)}catch(e){}}
 };
-const CFG = Object.assign({lang:'en',backend:'',geofence:600,minMin:8,mgrPin:DEFAULT_MGR_PIN,openHours:4,learn:true,requireLoc:false,photoReq:{shelf:true,fruity:true,back:true,price:true,promo:true},repPhotoReq:{}},LS.get('mff_cfg',{}));
+const CFG = Object.assign({lang:'en',backend:'',geofence:500,minMin:8,mgrPin:DEFAULT_MGR_PIN,openHours:4,learn:true,requireLoc:true,photoReq:{shelf:true,fruity:true,back:true,price:true,promo:true},repPhotoReq:{}},LS.get('mff_cfg',{}));
+if(CFG.geofence===600)CFG.geofence=500;
+if(!CFG._strictMig){CFG.requireLoc=true;CFG._strictMig=true;LS.set('mff_cfg',CFG);}
 function saveCfg(){LS.set('mff_cfg',CFG)}
 (function(){const os=LS.get('mff_stores',null);if(os&&os.length)STORES=os;const orp=LS.get('mff_reps',null);if(orp&&orp.length)REPS=orp;})();
 function persistData(){LS.set('mff_stores',STORES);LS.set('mff_reps',REPS)}
-const S={role:null,rep:null,screen:'home',mtab:'overview',store:null,visit:null,step:0,vfilter:'all'};
+const S={role:null,rep:null,screen:'home',mtab:'overview',store:null,visit:null,step:0,vfilter:'all',watchId:null};
 let geoCache=null; // {lat,lng,t}
 
 /* ============ i18n (English first) ============ */
@@ -362,7 +365,7 @@ const DICT={
   locOk:'Location confirmed',locFar:'Too far from store',locUnset:'Store location not set',
   locFarS:'You are {d} away. Move within {r} m of the store to start.',locOkS:'You are {d} from the store.',
   locUnsetS:'No reference point yet \u2014 this visit will set the store location.',
-  recheck:'Recheck location',mustBeAt:'You must be at the store to begin',gpsoff:'Location access needed',
+  recheck:'Recheck location',mustBeAt:'You must be at the store to begin',gpsoff:'Location access needed',autoExitMsg:'You left the store area \u2014 the visit was submitted automatically.',autoExitTag:'Auto-closed (left area)',monitoring:'Stay in store \u00b7 location is being tracked',noCoordsT:'Store location not set',noCoordsS:'Ask the manager to set this store location (Stores \u25b8 tap the store), then retry.',checkInL:'Check-in',checkOutL:'Check-out',storeCodeL:'Store code',gpsL:'GPS',setLoc:'Set store location',setLocS:'Paste a Maps link or coordinates, or use your current GPS while standing at the store.',useMyLoc:'Use my current location',locSaved:'Location saved',noCoordsYet:'Not set',clearLoc:'Clear location',
   gpsHelp:'Allow location for this site, then tap recheck. After the first time it is automatic.',
   photos:'Photo proof',photosSub:'Capture all required photos. Camera only \u2014 no gallery uploads.',
   ph_shelf:'Main shelf',ph_fruity:'Fruity section',ph_back:'Back / stock room',ph_price:'Pricing',ph_promo:'Promotion',
@@ -416,7 +419,7 @@ const DICT={
   locOk:'\u062a\u0645 \u062a\u0623\u0643\u064a\u062f \u0627\u0644\u0645\u0648\u0642\u0639',locFar:'\u0628\u0639\u064a\u062f \u0639\u0646 \u0627\u0644\u0645\u062a\u062c\u0631',locUnset:'\u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631 \u063a\u064a\u0631 \u0645\u062d\u062f\u062f',
   locFarS:'\u062a\u0628\u0639\u062f {d} \u0639\u0646 \u0627\u0644\u0645\u062a\u062c\u0631. \u0627\u0642\u062a\u0631\u0628 \u0644\u0645\u0633\u0627\u0641\u0629 {r} \u0645\u062a\u0631 \u0644\u0644\u0628\u062f\u0621.',locOkS:'\u062a\u0628\u0639\u062f {d} \u0639\u0646 \u0627\u0644\u0645\u062a\u062c\u0631.',
   locUnsetS:'\u0644\u0627 \u062a\u0648\u062c\u062f \u0646\u0642\u0637\u0629 \u0645\u0631\u062c\u0639\u064a\u0629 \u0628\u0639\u062f \u2014 \u0633\u062a\u062d\u062f\u062f \u0647\u0630\u0647 \u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631.',
-  recheck:'\u0625\u0639\u0627\u062f\u0629 \u0641\u062d\u0635 \u0627\u0644\u0645\u0648\u0642\u0639',mustBeAt:'\u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062a\u062c\u0631 \u0644\u0644\u0628\u062f\u0621',gpsoff:'\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0645\u0648\u0642\u0639 \u0645\u0637\u0644\u0648\u0628',
+  recheck:'\u0625\u0639\u0627\u062f\u0629 \u0641\u062d\u0635 \u0627\u0644\u0645\u0648\u0642\u0639',mustBeAt:'\u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062a\u062c\u0631 \u0644\u0644\u0628\u062f\u0621',gpsoff:'\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0645\u0648\u0642\u0639 \u0645\u0637\u0644\u0648\u0628',autoExitMsg:'\u063a\u0627\u062f\u0631\u062a \u0646\u0637\u0627\u0642 \u0627\u0644\u0645\u062a\u062c\u0631 \u2014 \u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',autoExitTag:'\u0625\u063a\u0644\u0627\u0642 \u062a\u0644\u0642\u0627\u0626\u064a (\u0645\u063a\u0627\u062f\u0631\u0629 \u0627\u0644\u0646\u0637\u0627\u0642)',monitoring:'\u0627\u0628\u0642 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062a\u062c\u0631 \u00b7 \u064a\u062a\u0645 \u062a\u062a\u0628\u0639 \u0645\u0648\u0642\u0639\u0643',noCoordsT:'\u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631 \u063a\u064a\u0631 \u0645\u062d\u062f\u062f',noCoordsS:'\u0627\u0637\u0644\u0628 \u0645\u0646 \u0627\u0644\u0645\u062f\u064a\u0631 \u062a\u062d\u062f\u064a\u062f \u0645\u0648\u0642\u0639 \u0647\u0630\u0627 \u0627\u0644\u0645\u062a\u062c\u0631 (\u0627\u0644\u0645\u062a\u0627\u062c\u0631 \u25b8 \u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0627\u0644\u0645\u062a\u062c\u0631) \u062b\u0645 \u0623\u0639\u062f \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629.',checkInL:'\u0648\u0642\u062a \u0627\u0644\u062f\u062e\u0648\u0644',checkOutL:'\u0648\u0642\u062a \u0627\u0644\u062e\u0631\u0648\u062c',storeCodeL:'\u0643\u0648\u062f \u0627\u0644\u0645\u062a\u062c\u0631',gpsL:'\u0627\u0644\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a',setLoc:'\u062a\u062d\u062f\u064a\u062f \u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631',setLocS:'\u0627\u0644\u0635\u0642 \u0631\u0627\u0628\u0637 \u062e\u0631\u0627\u0626\u0637 \u0623\u0648 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a\u060c \u0623\u0648 \u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0648\u0642\u0639\u0643 \u0627\u0644\u062d\u0627\u0644\u064a \u0648\u0623\u0646\u062a \u0641\u064a \u0627\u0644\u0645\u062a\u062c\u0631.',useMyLoc:'\u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0648\u0642\u0639\u064a \u0627\u0644\u062d\u0627\u0644\u064a',locSaved:'\u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u0645\u0648\u0642\u0639',noCoordsYet:'\u063a\u064a\u0631 \u0645\u062d\u062f\u062f',clearLoc:'\u0645\u0633\u062d \u0627\u0644\u0645\u0648\u0642\u0639',
   gpsHelp:'\u0627\u0633\u0645\u062d \u0628\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0645\u0648\u0642\u0639 \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0648\u0642\u0639\u060c \u062b\u0645 \u0623\u0639\u062f \u0627\u0644\u0641\u062d\u0635. \u0628\u0639\u062f \u0623\u0648\u0644 \u0645\u0631\u0629 \u064a\u0635\u0628\u062d \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',
   photos:'\u0635\u0648\u0631 \u0627\u0644\u0625\u062b\u0628\u0627\u062a',photosSub:'\u0627\u0644\u062a\u0642\u0637 \u0643\u0644 \u0627\u0644\u0635\u0648\u0631 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629. \u0627\u0644\u0643\u0627\u0645\u064a\u0631\u0627 \u0641\u0642\u0637 \u2014 \u0628\u062f\u0648\u0646 \u0631\u0641\u0639 \u0645\u0646 \u0627\u0644\u0627\u0633\u062a\u0648\u062f\u064a\u0648.',
   ph_shelf:'\u0627\u0644\u0631\u0641 \u0627\u0644\u0631\u0626\u064a\u0633\u064a',ph_fruity:'\u0642\u0633\u0645 \u0641\u0631\u0648\u062a\u064a',ph_back:'\u0627\u0644\u0628\u0627\u0628 \u0627\u0644\u062e\u0644\u0641\u064a / \u0627\u0644\u0645\u062e\u0632\u0646',ph_price:'\u0627\u0644\u0623\u0633\u0639\u0627\u0631',ph_promo:'\u0627\u0644\u0639\u0631\u0636 \u0627\u0644\u062a\u0631\u0648\u064a\u062c\u064a',
@@ -462,8 +465,9 @@ function applyDir(){document.documentElement.lang=CFG.lang;document.documentElem
 
 /* ============ helpers ============ */
 const $=(s,r)=>(r||document).querySelector(s);
-function el(html){const d=document.createElement('div');d.innerHTML=html.trim();return d.firstChild}
+function el(html){const tpl=document.createElement('template');tpl.innerHTML=String(html).trim();return tpl.content.firstChild}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function normDigits(s){return String(s==null?'':s).replace(/[\u0660-\u0669]/g,d=>d.charCodeAt(0)-0x0660).replace(/[\u06F0-\u06F9]/g,d=>d.charCodeAt(0)-0x06F0).replace(/\s+/g,'')}
 const ACC_COLORS={Othaim:'#1E22C4',Panda:'#00A859',Carrefour:'#E2148C',Danube:'#7B4FB5',Lulu:'#E9A21B',Tamimi:'#0FA3C4',Farm:'#E0552E',Tier3:'#5A6173'};
 function acc(a){return ACC_COLORS[a]||'#5A6173'}
 function stringColor(s){let h=0;s=String(s||'');for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);const c=['#1E22C4','#00B4A8','#7B4FB5','#E2148C','#0FA3C4','#E0552E','#3B40FF','#0FB87E'];return c[Math.abs(h)%c.length]}
@@ -475,7 +479,7 @@ function fmtDur2(min){if(min==null)return'\u2014';const h=Math.floor(min/60),m=M
 function nowISO(){return new Date().toISOString()}
 function ymd(d){d=new Date(d);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function sameMonth(a,b){a=new Date(a);b=new Date(b);return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()}
-function timeStr(d){return new Date(d).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
+function timeStr(d){return new Date(d).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true})}
 function dateStr(d){return new Date(d).toLocaleDateString(CFG.lang==='ar'?'ar-EG':'en-GB',{day:'2-digit',month:'short'})}
 function storeKey(s){return s.account+'|'+s.store+'|'+s.code}
 function repByPin(p){return REPS.find(r=>String(r.pin)===String(p).trim())}
@@ -509,6 +513,7 @@ const I={
  refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>',
  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
  globe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
+ exit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>',
  spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 4 8-8"/><path d="M21 8V4h-4"/></svg>',
  flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>'
 };
@@ -550,18 +555,18 @@ function Auth(){
   <div class="authfoot">${t('footer')}</div></div>`);
  v.querySelector('#lang').onclick=()=>{CFG.lang=CFG.lang==='en'?'ar':'en';saveCfg();render()};
  let _taps=0,_tt;const _logo=v.querySelector('.bm-logo');
- if(_logo)_logo.onclick=()=>{_taps++;clearTimeout(_tt);_tt=setTimeout(()=>_taps=0,1500);if(_taps>=5){_taps=0;const p=prompt(t('mgrCode'));if(p&&p.trim()===String(CFG.mgrPin)){S.role='manager';S.mtab='settings';S.focusData=true;LS.set('mff_session',{role:'manager'});Visits.pull().then(render);render();}else if(p){toast(t('wrongMgr'),'bad');}}};
+ if(_logo)_logo.onclick=()=>{_taps++;clearTimeout(_tt);_tt=setTimeout(()=>_taps=0,1500);if(_taps>=5){_taps=0;const p=prompt(t('mgrCode'));if(p&&normDigits(p)===normDigits(CFG.mgrPin)){S.role='manager';S.mtab='settings';S.focusData=true;LS.set('mff_session',{role:'manager'});Visits.pull().then(render);render();}else if(p){toast(t('wrongMgr'),'bad');}}};
  const seg=v.querySelector('#seg'),form=v.querySelector('#form');
  function drawForm(){
   if(role==='merch'){
    form.innerHTML=`<div class="fld"><label>${t('selectName')}</label><select class="in" id="name"><option value="">${t('choose')}</option>${REPS.map(r=>`<option value="${esc(r.key)}">${esc(r.name)}</option>`).join('')}</select></div>
     <div class="fld"><label>${t('pin')}</label><input class="in" id="pin" type="tel" inputmode="numeric" placeholder="${t('enterPin')}" autocomplete="off"></div>
     <button class="btn" id="go">${I.shield}<span>${t('signin')}</span></button>`;
-   form.querySelector('#go').onclick=()=>{const nm=form.querySelector('#name').value,pin=form.querySelector('#pin').value.trim();if(!nm)return toast(t('pickName'),'bad');const rep=repByKey(nm);if(!rep||String(rep.pin)!==pin)return toast(t('wrongPin'),'bad');S.role='merch';S.rep=rep.key;S.screen='home';LS.set('mff_session',{role:'merch',rep:rep.key});Visits.pull().then(render);render()};
+   form.querySelector('#go').onclick=()=>{const nm=form.querySelector('#name').value,pin=normDigits(form.querySelector('#pin').value);if(!nm)return toast(t('pickName'),'bad');const rep=repByKey(nm);if(!rep||normDigits(rep.pin)!==pin)return toast(t('wrongPin'),'bad');S.role='merch';S.rep=rep.key;S.screen='home';LS.set('mff_session',{role:'merch',rep:rep.key});Visits.pull().then(render);render()};
   }else{
    form.innerHTML=`<div class="fld"><label>${t('mgrCode')}</label><input class="in" id="mpin" type="tel" inputmode="numeric" placeholder="${t('enterMgr')}" autocomplete="off"></div>
     <button class="btn" id="go">${I.shield}<span>${t('signin')}</span></button>`;
-   form.querySelector('#go').onclick=()=>{const pin=form.querySelector('#mpin').value.trim();if(pin!==String(CFG.mgrPin))return toast(t('wrongMgr'),'bad');S.role='manager';S.mtab='overview';LS.set('mff_session',{role:'manager'});Visits.pull().then(render);render()};
+   form.querySelector('#go').onclick=()=>{const pin=normDigits(form.querySelector('#mpin').value);if(pin!==normDigits(CFG.mgrPin))return toast(t('wrongMgr'),'bad');S.role='manager';S.mtab='overview';LS.set('mff_session',{role:'manager'});Visits.pull().then(render);render()};
   }
  }
  seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{role=b.dataset.r;seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));drawForm()});
@@ -571,8 +576,9 @@ function Auth(){
 
 /* ============ shared TopBar ============ */
 function TopBar(name,role){
- const t1=el(`<div class="top spread"><div class="row"><div class="av" style="background:${stringColor(name)}">${esc(ini(name))}</div><div><div class="nm">${esc(name)}</div><div class="rl">${esc(role)}</div></div></div><button class="iconbtn" id="lng">${I.globe}</button></div>`);
+ const t1=el(`<div class="top spread"><div class="row"><div class="av" style="background:${stringColor(name)}">${esc(ini(name))}</div><div><div class="nm">${esc(name)}</div><div class="rl">${esc(role)}</div></div></div><div class="row" style="gap:8px"><button class="iconbtn" id="lng">${I.globe}</button><button class="iconbtn" id="out" title="${t('signout')}">${I.exit}</button></div></div>`);
  t1.querySelector('#lng').onclick=()=>{CFG.lang=CFG.lang==='en'?'ar':'en';saveCfg();render()};
+ t1.querySelector('#out').onclick=signout;
  return t1;
 }
 
@@ -661,9 +667,10 @@ function resumeVisit(v){
  S.step=Object.keys(v.photos||{}).length>=5?2:((v.geoState==='ok'||v.geoState==='unset')?1:0);
  drawVisit();if(S.step===0)acquireLocation();
 }
-function closeVisit(){OV.innerHTML='';render()}
+function closeVisit(){stopMonitoring();OV.innerHTML='';render()}
 function drawVisit(){
  OV.innerHTML='';
+ if(S.visit&&S.visit.status==='open'&&(S.step===1||S.step===2))startMonitoring();else stopMonitoring();
  const sheet=el(`<div class="vsheet"><div class="vtop"><div class="spread"><div class="row"><button class="x" id="vx">${I.x}</button><div><div class="vnm elip" style="max-width:230px">${esc(S.store.name)}</div><div class="vmeta">${esc(S.store.city)} \u00b7 ${esc(S.store.account)}</div></div></div></div><div class="steps">${[0,1,2,3].map(i=>`<div class="s ${i<=S.step?'on':''}"></div>`).join('')}</div></div><div class="vbody" id="vbody"></div><div class="vfoot" id="vfoot"></div></div>`);
  sheet.querySelector('#vx').onclick=()=>closeVisit();
  OV.appendChild(sheet);
@@ -687,6 +694,31 @@ function acquireLocation(){
   if(S._refreshGeo)S._refreshGeo();
  },err=>{v.geoState='off';if(S._refreshGeo)S._refreshGeo();},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
 }
+/* live geofence monitoring: auto-submit & exit if rep leaves the radius */
+function startMonitoring(){
+ stopMonitoring();
+ if(!S.visit||S.visit.status!=='open'||!navigator.geolocation)return;
+ const st=STORES.find(s=>storeKey(s)===S.visit.storeKey);
+ if(!st||st.lat==null||st.lng==null)return; // no reference yet, can't monitor
+ S.watchId=navigator.geolocation.watchPosition(pos=>{
+  if(!S.visit||S.visit.status!=='open'){stopMonitoring();return;}
+  if(pos.coords.accuracy>150)return; // ignore unreliable fixes
+  const d=haversine(pos.coords.latitude,pos.coords.longitude,st.lat,st.lng);
+  S.visit.lastDist=d;
+  if(d>CFG.geofence)autoExitVisit(d);
+ },()=>{},{enableHighAccuracy:true,maximumAge:4000,timeout:20000});
+}
+function stopMonitoring(){if(S.watchId!=null&&navigator.geolocation){try{navigator.geolocation.clearWatch(S.watchId)}catch(e){}}S.watchId=null;}
+function autoExitVisit(d){
+ stopMonitoring();
+ const v=S.visit;if(!v||v.status!=='open')return;
+ v.end=nowISO();v.durationMin=Math.max(1,Math.round((new Date(v.end)-new Date(v.start))/60000));
+ v.autoExit=true;v.exitDist=Math.round(d);
+ const sb=scoreVisit(v);v.scoreBreak=sb;v.score=sb.total;v.status='done';v.synced=false;
+ Visits.update(v.id,{end:v.end,durationMin:v.durationMin,scoreBreak:sb,score:v.score,status:'done',autoExit:true,exitDist:v.exitDist,cats:v.cats,prices:v.prices,promo:v.promo,oos:v.oos,notes:v.notes,photos:v.photos});
+ toast(t('autoExitMsg'),'bad');
+ S.store=null;S.visit=null;S.step=0;OV.innerHTML='';S.screen='home';if(S.role==='merch')renderRep();else render();
+}
 function stepCheckin(body,foot){
  body.innerHTML=`<div class="steptitle">${t('checkin')}</div><div class="stepsub">${t('mustBeAt')}</div>`;
  const radar=el(`<div class="radar" id="radar"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="sweep"></div><div class="core">${I.loc}</div></div>`);body.appendChild(radar);
@@ -700,7 +732,7 @@ function updateGeoUI(radar,box,btn){
  if(st==='wait'){box.className='geobox';box.innerHTML=`<div class="gt">${t('locating')}</div><div class="gs">GPS \u00b7 ${CFG.geofence} m</div>`;btn.disabled=true;btn.innerHTML='<span class="spin"></span>';}
  else if(st==='off'){radar.classList.add('off');core.innerHTML=I.alert;box.className='geobox far';box.innerHTML=`<div class="gt">${t('gpsoff')}</div><div class="gs">${t('gpsHelp')}</div>`;btn.disabled=true;btn.innerHTML=t('recheck');btn.onclick=acquireLocation;}
  else if(st==='far'){radar.classList.add('far');core.innerHTML=I.loc;box.className='geobox far';box.innerHTML=`<div class="gt">${t('locFar')}</div><div class="gs">${t('locFarS',{d:fmtDist(v.dist),r:CFG.geofence})}</div>`;btn.disabled=true;btn.innerHTML=t('recheck');btn.onclick=acquireLocation;}
- else if(st==='needs'){radar.classList.add('off');core.innerHTML=I.alert;box.className='geobox far';box.innerHTML=`<div class="gt">${t('locUnset')}</div><div class="gs">${t('requireLocS')}</div>`;btn.disabled=true;btn.innerHTML=t('recheck');btn.onclick=acquireLocation;}
+ else if(st==='needs'){radar.classList.add('off');core.innerHTML=I.alert;box.className='geobox far';box.innerHTML=`<div class="gt">${t('noCoordsT')}</div><div class="gs">${t('noCoordsS')}</div>`;btn.disabled=true;btn.innerHTML=t('recheck');btn.onclick=acquireLocation;}
  else if(st==='unset'){radar.classList.add('locked');core.innerHTML=I.loc;box.className='geobox';box.innerHTML=`<div class="gt">${t('locUnset')}</div><div class="gs">${t('locUnsetS')}</div>`;btn.disabled=false;btn.innerHTML=t('startVisit');btn.onclick=()=>{const stx=STORES.find(s=>storeKey(s)===v.storeKey);if(stx&&CFG.learn){stx.lat=v.lat;stx.lng=v.lng;persistData();}S.step=1;drawVisit();};}
  else if(st==='ok'){radar.classList.add('locked');core.innerHTML=I.check;box.className='geobox ok';box.innerHTML=`<div class="gt">${t('locOk')}</div><div class="gs">${t('locOkS',{d:fmtDist(v.dist)})}</div>`;btn.disabled=false;btn.innerHTML=t('startVisit');btn.onclick=()=>{S.step=1;drawVisit();};}
 }
@@ -711,6 +743,7 @@ function requiredKeysFor(repKey){const r=photoReqFor(repKey);return PHOTO_KEYS.f
 function photoComplete(v){return requiredKeysFor(v.rep).every(k=>v.photos&&v.photos[k])}
 function stepPhotos(body,foot){
  body.innerHTML=`<div class="steptitle">${t('photos')}</div><div class="stepsub">${t('photosSub')}</div>`;
+ const stx0=STORES.find(s=>storeKey(s)===S.visit.storeKey);if(stx0&&stx0.lat!=null)body.appendChild(el(`<div class="alertban amber" style="margin-bottom:16px"><div class="ab-ic">${I.loc}</div><div class="grow"><div class="ab-s">${t('monitoring')}</div></div></div>`));
  const req=photoReqFor(S.visit.rep);
  const grid=el('<div class="pgrid"></div>');
  PHOTO_KEYS.forEach(([k,lbl])=>{const has=S.visit.photos[k];const isReq=req[k];
@@ -745,6 +778,7 @@ function stepActivity(body,foot){
 }
 function scoreVisit(v){const rk=requiredKeysFor(v.rep);const capReq=rk.filter(k=>v.photos&&v.photos[k]).length;let photo=rk.length?Math.round(capReq/rk.length*50):Math.min(50,Object.keys(v.photos||{}).length*10);const geo=(v.geoState==='ok'||v.geoState==='unset')?20:0;const dur=v.durationMin>=CFG.minMin?15:Math.round(Math.min(v.durationMin||0,CFG.minMin)/CFG.minMin*15);const act=(v.prices?8:0)+(v.promo?7:0);return{photo,geo,dur,act,total:Math.min(100,photo+geo+dur+act)}}
 function finishVisit(btn){
+ stopMonitoring();
  const v=S.visit;v.end=nowISO();v.durationMin=Math.max(1,Math.round((new Date(v.end)-new Date(v.start))/60000));
  const sb=scoreVisit(v);v.scoreBreak=sb;v.score=sb.total;v.status='done';v.synced=false;
  btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
@@ -831,12 +865,12 @@ function repDetail(s){
 function mStores(c){
  const month=Visits.all().filter(v=>v.status!=='open'&&sameMonth(v.start,Date.now()));
  const byKey={};month.forEach(v=>{(byKey[v.storeKey]=byKey[v.storeKey]||[]).push(v)});
- const p=el(`<div class="panel"><div class="ph"><div class="pt">${t('storeCoverage')}</div><span class="sm mut">${STORES.length} ${t('stores')}</span></div><div class="pb" style="padding:0 8px"></div></div>`);
+ const p=el(`<div class="panel"><div class="ph"><div class="pt">${t('storeCoverage')}</div><span class="sm mut">${STORES.filter(x=>x.lat!=null).length}/${STORES.length} \u00b7 ${t('gpsL')}</span></div><div class="pb" style="padding:0 8px"></div></div>`);
  const tbl=el(`<table class="tbl"><thead><tr><th>${t('store')}</th><th>${t('account')}</th><th>${t('rep')}</th><th>${t('repVisits')}</th><th>${t('lastVisit')}</th><th>${t('status')}</th></tr></thead><tbody></tbody></table>`);
  const tb=tbl.querySelector('tbody');
  const rows=STORES.map(s=>{const vs=byKey[storeKey(s)]||[];const last=vs.length?vs.slice().sort((a,b)=>new Date(b.start)-new Date(a.start))[0].start:null;return{s,n:vs.length,last}});
  rows.sort((a,b)=>a.n-b.n);
- rows.forEach(({s,n,last})=>tb.appendChild(el(`<tr><td><div style="font-weight:600" class="elip">${esc(s.name)}</div><div class="xs mut">${esc(s.city)} \u00b7 ${esc(s.store)}</div></td><td><span class="flagchip" style="background:${acc(s.account)}22;color:${acc(s.account)}">${esc(s.account)}</span></td><td class="sm">${esc(s.rep)}</td><td class="tnum" style="font-weight:600">${n}</td><td class="sm mut">${last?dateStr(last):t('never')}</td><td>${n?`<span class="flagchip fl-ok">${t('visited')}</span>`:`<span class="flagchip fl-far">${t('notVisited')}</span>`}</td></tr>`)));
+ rows.forEach(({s,n,last})=>{const hasLoc=s.lat!=null;const tr=el(`<tr class="clk"><td><div style="font-weight:600" class="elip">${esc(s.name)}</div><div class="xs mut">${esc(s.city)} \u00b7 ${esc(s.store)} \u00b7 ${hasLoc?'<span style="color:var(--ok)">\u25cf '+t('gpsL')+'</span>':'<span style="color:var(--bad)">\u25cf '+t('noCoordsYet')+'</span>'}</div></td><td><span class="flagchip" style="background:${acc(s.account)}22;color:${acc(s.account)}">${esc(s.account)}</span></td><td class="sm">${esc(s.rep)}</td><td class="tnum" style="font-weight:600">${n}</td><td class="sm mut">${last?dateStr(last):t('never')}</td><td>${n?`<span class="flagchip fl-ok">${t('visited')}</span>`:`<span class="flagchip fl-far">${t('notVisited')}</span>`}</td></tr>`);tr.onclick=()=>storeLocSheet(s);tb.appendChild(tr)});
  p.querySelector('.pb').appendChild(tbl);c.appendChild(p);
 }
 function mLog(c){
@@ -849,7 +883,7 @@ function mLog(c){
 }
 function logRow(v){
  const cls=v.score>=80?'sp-hi':v.score>=55?'sp-md':'sp-lo';
- const row=el(`<div class="logrow"><div class="lh"><div class="av-s" style="background:${stringColor(v.repName||v.rep)}">${esc(ini(v.repName||v.rep))}</div><div class="grow"><div style="font-weight:600;font-size:14px" class="elip">${esc(v.storeName)}</div><div class="xs mut">${esc(v.repName||v.rep)} \u00b7 ${dateStr(v.start)} ${timeStr(v.start)} \u00b7 ${fmtDur2(v.durationMin)}</div></div>${v.far?`<span class="flagchip fl-far">${I.flag}far</span>`:''}<span class="score-pill ${cls}">${v.score}</span></div><div class="lbody"></div></div>`);
+ const row=el(`<div class="logrow"><div class="lh"><div class="av-s" style="background:${stringColor(v.repName||v.rep)}">${esc(ini(v.repName||v.rep))}</div><div class="grow"><div style="font-weight:600;font-size:14px" class="elip">${esc(v.storeName)}</div><div class="xs mut">${esc(v.repName||v.rep)} \u00b7 ${dateStr(v.start)} ${timeStr(v.start)} \u00b7 ${fmtDur2(v.durationMin)}</div></div>${v.autoExit?`<span class="flagchip fl-far">${I.flag}auto</span>`:(v.far?`<span class="flagchip fl-far">${I.flag}far</span>`:'')}<span class="score-pill ${cls}">${v.score}</span></div><div class="lbody"></div></div>`);
  const lb=row.querySelector('.lbody');
  row.querySelector('.lh').onclick=()=>{row.classList.toggle('open');if(row.classList.contains('open')&&!lb.dataset.built){buildLogBody(lb,v);lb.dataset.built='1'}};
  return row;
@@ -858,7 +892,8 @@ function buildLogBody(lb,v){
  const ph=Object.entries(v.photos||{});
  if(ph.length){const strip=el('<div class="photostrip"></div>');ph.forEach(([k,src])=>{const im=el(`<img src="${src}">`);im.onclick=()=>lightbox(src);strip.appendChild(im)});lb.appendChild(strip)}
  const sb=v.scoreBreak||{};
- lb.appendChild(el(`<div class="kv-grid"><div><div class="k">${t('timeIn')}</div><div class="vv">${fmtDur2(v.durationMin)}</div></div><div><div class="k">${t('distance')}</div><div class="vv">${v.dist!=null?fmtDist(v.dist):(v.geoState==='unset'?t('locUnset'):'\u2014')}</div></div><div><div class="k">${t('pricesL')}</div><div class="vv">${v.prices?'\u2713':'\u2014'}</div></div><div><div class="k">${t('promoL')}</div><div class="vv">${v.promo?'\u2713':'\u2014'}</div></div><div><div class="k">${t('cats')}</div><div class="vv">${(v.cats||[]).map(x=>t('cat_'+x)).join(', ')||'\u2014'}</div></div><div><div class="k">${t('oosL')}</div><div class="vv">${esc(v.oos)||'\u2014'}</div></div></div>`));
+ lb.appendChild(el(`<div class="kv-grid"><div><div class="k">${t('checkInL')}</div><div class="vv">${dateStr(v.start)} ${timeStr(v.start)}</div></div><div><div class="k">${t('checkOutL')}</div><div class="vv">${v.end?timeStr(v.end):'\u2014'}</div></div><div><div class="k">${t('timeIn')}</div><div class="vv">${fmtDur2(v.durationMin)}</div></div><div><div class="k">${t('distance')}</div><div class="vv">${v.dist!=null?fmtDist(v.dist):(v.geoState==='unset'?t('locUnset'):'\u2014')}</div></div><div><div class="k">${t('storeCodeL')}</div><div class="vv">${esc(v.code)||'\u2014'}</div></div><div><div class="k">${t('gpsL')}</div><div class="vv">${v.lat!=null?(v.lat.toFixed(5)+', '+v.lng.toFixed(5)):'\u2014'}</div></div><div><div class="k">${t('pricesL')}</div><div class="vv">${v.prices?'\u2713':'\u2014'}</div></div><div><div class="k">${t('promoL')}</div><div class="vv">${v.promo?'\u2713':'\u2014'}</div></div><div><div class="k">${t('cats')}</div><div class="vv">${(v.cats||[]).map(x=>t('cat_'+x)).join(', ')||'\u2014'}</div></div><div><div class="k">${t('oosL')}</div><div class="vv">${esc(v.oos)||'\u2014'}</div></div></div>`));
+ if(v.autoExit)lb.appendChild(el(`<div class="flagchip fl-far" style="margin-top:12px">${I.alert}${t('autoExitTag')}${v.exitDist?' \u00b7 '+fmtDist(v.exitDist):''}</div>`));
  if(v.notes)lb.appendChild(el(`<div style="margin-top:12px"><div class="k" style="font-size:11px;color:var(--mut)">${t('notesL')}</div><div class="sm" style="margin-top:3px">${esc(v.notes)}</div></div>`));
  lb.appendChild(el(`<div class="sm" style="margin-top:14px;color:var(--mut)">${t('scoreBreak')}: \ud83d\udcf7 ${sb.photo||0} \u00b7 \ud83d\udccd ${sb.geo||0} \u00b7 \u23f1 ${sb.dur||0} \u00b7 \ud83c\udff7 ${sb.act||0}</div>`));
  if(v.lat)lb.appendChild(el(`<a class="minib tl" style="margin-top:14px" target="_blank" href="https://maps.google.com/?q=${v.lat},${v.lng}">${I.loc}<span>${t('openMap')}</span></a>`));
@@ -911,7 +946,7 @@ function mSettings(c){
  if(S.focusData){S.focusData=false;setTimeout(()=>{if(dataGrp.scrollIntoView)dataGrp.scrollIntoView({behavior:'smooth',block:'center'});},80);}
 
  // ---- security ----
- const mpinIn=el(`<input class="tinput" value="${esc(CFG.mgrPin)}" style="max-width:130px">`);mpinIn.onchange=e=>{CFG.mgrPin=e.target.value.trim()||DEFAULT_MGR_PIN;saveCfg();toast(t('saved'),'ok')};
+ const mpinIn=el(`<input class="tinput" value="${esc(CFG.mgrPin)}" style="max-width:130px">`);mpinIn.onchange=e=>{CFG.mgrPin=normDigits(e.target.value)||DEFAULT_MGR_PIN;saveCfg();toast(t('saved'),'ok')};
  c.appendChild(grp(t('cfgSec'),[row(t('mgrPinL'),'',mpinIn)]));
 
  const genBtn=el(`<button class="minib">${I.spark}<span>${t('genDemo')}</span></button>`);genBtn.onclick=()=>{seedDemo();toast(t('saved'),'ok');S.mtab='overview';renderManager()};
@@ -939,6 +974,23 @@ function repRulesSheet(r,parent){
  m.querySelector('#mx').onclick=()=>{m.remove();if(parent){parent.remove();perRepSheet()}};m.onclick=e=>{if(e.target===m){m.remove();if(parent){parent.remove();perRepSheet()}}};OV.appendChild(m);
 }
 
+function storeLocSheet(st){
+ const m=el(`<div class="modal"><div class="msheet"><div class="mh"><div class="row"><button class="iconbtn" id="bk">${I.back}</button><div class="mt">${t('setLoc')}</div></div><button class="iconbtn" id="mx">${I.x}</button></div>
+  <div class="sm mut" style="margin-bottom:10px">${esc(st.name)} \u00b7 ${esc(st.city)}</div>
+  <div class="card" style="padding:14px;margin-bottom:14px"><div class="spread"><div class="sm" style="font-weight:600">${t('gpsL')}</div><div class="disp" id="cur" style="font-weight:700;font-size:14px;color:${st.lat!=null?'var(--ok)':'var(--bad)'}">${st.lat!=null?st.lat.toFixed(5)+', '+st.lng.toFixed(5):t('noCoordsYet')}</div></div></div>
+  <div class="stepsub" style="margin-bottom:10px">${t('setLocS')}</div>
+  <div class="field"><input class="tinput" id="loc" placeholder="https://maps.app.goo.gl/\u2026 / 26.33,43.97" value="${esc(st.url||'')}"></div>
+  <button class="minib tl" id="useme" style="width:100%;justify-content:center;padding:14px;margin-bottom:10px">${I.loc}<span>${t('useMyLoc')}</span></button>
+  ${st.url?`<a class="minib" id="openmap" target="_blank" href="${esc(st.url)}" style="width:100%;justify-content:center;padding:12px;margin-bottom:10px;background:#EEF0FF;color:var(--blue)">${I.loc}<span>${t('openMap')}</span></a>`:''}
+  <button class="btn go" id="save" style="box-shadow:none">${I.check}<span>${t('save')}</span></button>
+  ${st.lat!=null?`<button class="minib dn" id="clr" style="width:100%;justify-content:center;padding:12px;margin-top:10px">${I.trash}<span>${t('clearLoc')}</span></button>`:''}</div></div>`);
+ const close=()=>{m.remove();S.mtab='stores';renderManager()};
+ m.querySelector('#mx').onclick=close;m.querySelector('#bk').onclick=close;m.onclick=e=>{if(e.target===m)close()};
+ m.querySelector('#useme').onclick=()=>{if(!navigator.geolocation)return toast(t('gpsoff'),'bad');navigator.geolocation.getCurrentPosition(p=>{st.lat=p.coords.latitude;st.lng=p.coords.longitude;const c=m.querySelector('#cur');c.textContent=st.lat.toFixed(5)+', '+st.lng.toFixed(5);c.style.color='var(--ok)';},()=>toast(t('gpsoff'),'bad'),{enableHighAccuracy:true});};
+ m.querySelector('#save').onclick=()=>{const val=m.querySelector('#loc').value.trim();const cm=val.match(/(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);if(cm){st.lat=+cm[1];st.lng=+cm[2];}if(val)st.url=val;persistData();pushConfig();toast(t('locSaved'),'ok');close();};
+ const clr=m.querySelector('#clr');if(clr)clr.onclick=()=>{st.lat=null;st.lng=null;persistData();pushConfig();toast(t('saved'),'ok');close();};
+ OV.appendChild(m);
+}
 function addStoreSheet(){
  const m=el(`<div class="modal"><div class="msheet"><div class="mh"><div class="row"><button class="iconbtn" id="bk">${I.back}</button><div class="mt">${t('addStore')}</div></div><button class="iconbtn" id="mx">${I.x}</button></div>
   <div class="field"><label>${t('fName')}</label><input class="tinput" id="f_name"></div>
@@ -1003,12 +1055,13 @@ function exportXlsx(){
  stats.forEach(s=>p1.push([s.rep.key,(REPS.find(r=>r.key===s.rep.key)||{}).full||s.rep.name,s.total,s.covered,s.cov,s.visits,s.avgTime,s.score,s.far]));
  const ws1=XLSX.utils.aoa_to_sheet(p1);ws1['!cols']=[{wch:14},{wch:30},{wch:14},{wch:14},{wch:12},{wch:15},{wch:14},{wch:13},{wch:12}];
  XLSX.utils.book_append_sheet(wb,ws1,L==='ar'?'\u0625\u0646\u062a\u0627\u062c\u064a\u0629 \u0627\u0644\u0645\u0646\u0627\u062f\u064a\u0628':'Rep Productivity');
- const h2=[L==='ar'?'\u0627\u0644\u062a\u0627\u0631\u064a\u062e':'Date',L==='ar'?'\u0627\u0644\u0648\u0642\u062a':'Time',L==='ar'?'\u0627\u0644\u0645\u0646\u062f\u0648\u0628':'Rep',L==='ar'?'\u0627\u0644\u0645\u062a\u062c\u0631':'Store',L==='ar'?'\u0627\u0644\u062d\u0633\u0627\u0628':'Account',L==='ar'?'\u0627\u0644\u0645\u062f\u064a\u0646\u0629':'City',L==='ar'?'\u0627\u0644\u0645\u062f\u0629 (\u062f)':'Duration (min)',L==='ar'?'\u0627\u0644\u0645\u0633\u0627\u0641\u0629 (\u0645)':'Distance (m)',L==='ar'?'\u062e\u0627\u0631\u062c \u0627\u0644\u0646\u0637\u0627\u0642':'Out of range',L==='ar'?'\u0635\u0648\u0631':'Photos',L==='ar'?'\u0623\u0633\u0639\u0627\u0631':'Prices',L==='ar'?'\u0639\u0631\u0636':'Promo',L==='ar'?'\u0646\u0648\u0627\u0642\u0635':'OOS',L==='ar'?'\u0627\u0644\u062a\u0642\u064a\u064a\u0645':'Score',L==='ar'?'\u0645\u0644\u0627\u062d\u0638\u0627\u062a':'Notes'];
+ const A=x=>L==='ar'?x[0]:x[1];
+ const h2=[A(['\u0627\u0644\u062a\u0627\u0631\u064a\u062e','Date']),A(['\u0648\u0642\u062a \u0627\u0644\u062f\u062e\u0648\u0644','Check-in']),A(['\u0648\u0642\u062a \u0627\u0644\u062e\u0631\u0648\u062c','Check-out']),A(['\u0627\u0644\u0645\u0646\u062f\u0648\u0628','Salesman']),A(['\u0627\u0644\u0645\u062a\u062c\u0631','Store']),A(['\u0627\u0644\u0643\u0648\u062f','Code']),A(['\u0627\u0644\u062d\u0633\u0627\u0628','Account']),A(['\u0627\u0644\u0645\u062f\u064a\u0646\u0629','City']),A(['\u0627\u0644\u0645\u062f\u0629 (\u062f)','Duration (min)']),A(['\u0627\u0644\u0645\u0633\u0627\u0641\u0629 (\u0645)','Distance (m)']),A(['\u062e\u0627\u0631\u062c \u0627\u0644\u0646\u0637\u0627\u0642','Out of range']),A(['\u0625\u063a\u0644\u0627\u0642 \u062a\u0644\u0642\u0627\u0626\u064a','Auto-closed']),A(['\u062e\u0637 \u0627\u0644\u0639\u0631\u0636','Lat']),A(['\u062e\u0637 \u0627\u0644\u0637\u0648\u0644','Lng']),A(['\u0635\u0648\u0631','Photos']),A(['\u0623\u0633\u0639\u0627\u0631','Prices']),A(['\u0639\u0631\u0636','Promo']),A(['\u0646\u0648\u0627\u0642\u0635','OOS']),A(['\u0627\u0644\u062a\u0642\u064a\u064a\u0645','Score']),A(['\u0645\u0644\u0627\u062d\u0638\u0627\u062a','Notes'])];
  const p2=[h2];
- all.slice().sort((a,b)=>new Date(b.start)-new Date(a.start)).forEach(v=>{p2.push([new Date(v.start),timeStr(v.start),v.repName||v.rep,v.storeName,v.account,v.city,v.durationMin||0,v.dist==null?'':v.dist,v.far?'YES':'',Object.keys(v.photos||{}).length,v.prices?'\u2713':'',v.promo?'\u2713':'',v.oos||'',v.score||0,v.notes||''])});
+ all.slice().sort((a,b)=>new Date(b.start)-new Date(a.start)).forEach(v=>{p2.push([new Date(v.start),timeStr(v.start),v.end?timeStr(v.end):'',v.repName||v.rep,v.storeName,v.code||'',v.account,v.city,v.durationMin||0,v.dist==null?'':v.dist,v.far?'YES':'',v.autoExit?'YES':'',v.lat!=null?v.lat:'',v.lng!=null?v.lng:'',Object.keys(v.photos||{}).length,v.prices?'\u2713':'',v.promo?'\u2713':'',v.oos||'',v.score||0,v.notes||''])});
  const ws2=XLSX.utils.aoa_to_sheet(p2);
  for(let R=1;R<p2.length;R++){const cell=ws2[XLSX.utils.encode_cell({r:R,c:0})];if(cell){cell.t='d';cell.z='yyyy-mm-dd'}}
- ws2['!cols']=[{wch:12},{wch:8},{wch:24},{wch:30},{wch:12},{wch:14},{wch:14},{wch:13},{wch:12},{wch:8},{wch:8},{wch:8},{wch:18},{wch:8},{wch:30}];
+ ws2['!cols']=[{wch:12},{wch:11},{wch:11},{wch:22},{wch:30},{wch:11},{wch:11},{wch:13},{wch:13},{wch:13},{wch:12},{wch:12},{wch:11},{wch:11},{wch:8},{wch:8},{wch:8},{wch:16},{wch:8},{wch:28}];
  XLSX.utils.book_append_sheet(wb,ws2,L==='ar'?'\u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a':'Visits Detail');
  const month=all.filter(v=>sameMonth(v.start,Date.now()));const byKey={};month.forEach(v=>{(byKey[v.storeKey]=byKey[v.storeKey]||[]).push(v)});
  const h3=[L==='ar'?'\u0627\u0644\u0645\u062a\u062c\u0631':'Store',L==='ar'?'\u0627\u0644\u062d\u0633\u0627\u0628':'Account',L==='ar'?'\u0627\u0644\u0645\u062f\u064a\u0646\u0629':'City',L==='ar'?'\u0627\u0644\u0645\u0646\u062f\u0648\u0628':'Rep',L==='ar'?'\u0632\u064a\u0627\u0631\u0627\u062a \u0627\u0644\u0634\u0647\u0631':'Visits (month)',L==='ar'?'\u0622\u062e\u0631 \u0632\u064a\u0627\u0631\u0629':'Last visit',L==='ar'?'\u0627\u0644\u062d\u0627\u0644\u0629':'Status'];
