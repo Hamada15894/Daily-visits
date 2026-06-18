@@ -81,13 +81,13 @@ select.in option{color:#111}
 .btn[disabled]{opacity:.5;box-shadow:none}
 .btn svg{width:19px;height:19px}
 .btn.ghost{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.18);box-shadow:none;color:#fff}
-.langpill{position:absolute;top:20px;font-size:12.5px;font-weight:600;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);padding:8px 14px;border-radius:30px;z-index:3;display:flex;gap:7px;align-items:center}
+.langpill{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);font-size:12.5px;font-weight:600;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);padding:8px 14px;border-radius:30px;z-index:6;display:flex;gap:7px;align-items:center}
 .langpill svg{width:15px;height:15px}
 html[dir=ltr] .langpill{right:20px} html[dir=rtl] .langpill{left:20px}
 .authfoot{margin-top:24px;font-size:12px;color:rgba(255,255,255,.42);text-align:center}
 body.auth-mode{background:var(--ink)}
 body.auth-mode .app{max-width:none;background:transparent;min-height:100dvh}
-.auth-inner{width:100%;max-width:460px;margin:0 auto;position:relative;z-index:1}
+.auth-inner{width:100%;max-width:460px;margin:0 auto;position:relative;z-index:1;padding-top:calc(env(safe-area-inset-top,0px) + 8px)}
 @media(min-width:760px){.auth{align-items:center}}
 
 .top{position:sticky;top:0;z-index:40;background:rgba(246,247,251,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:14px 18px;padding-top:max(14px,env(safe-area-inset-top))}
@@ -420,7 +420,7 @@ const DICT={
   overview:'Overview',team:'Team',stores:'Stores',log:'Visit log',alerts:'Alerts',settings:'Settings',
   totalVisits:'Total visits',activeReps:'Active reps',avgTime:'Avg time',compliance:'Compliance',
   visitsToday:'visits today',ofTeam:'of team active',perVisit:'per visit',photoGeo:'photo + geo pass',
-  accountCoverage:'Account coverage',topReps:'Top performers',viewAll:'View all',hoursChart:'Working hours by salesman',catActivity:'Category activity',gpsGapT:'{n} stores have no GPS location yet',gpsGapS:'The 500 m check-in lock only works on stores that have coordinates. Set them so a rep cannot open a store from anywhere else.',gpsFixBtn:'Fix now',
+  accountCoverage:'Account coverage',topReps:'Top performers',viewAll:'View all',hoursChart:'Working hours by salesman',catActivity:'Category activity',gpsGapT:'{n} stores have no GPS location yet',gpsGapS:'The 500 m check-in lock only works on stores that have coordinates. Set them so a rep cannot open a store from anywhere else.',gpsFixBtn:'Fix now',gpsDenied:'Location permission blocked',gpsDeniedS:'Allow location for this site in your browser settings, then tap Recheck.',
   teamPerf:'Team performance',rep:'Rep',repVisits:'Visits',repCov:'Coverage',repTime:'Avg time',repScore:'Score',
   storeCoverage:'Store coverage',store:'Store',account:'Account',city:'City',lastVisit:'Last visit',status:'Status',
   visited:'Visited',notVisited:'Not visited',never:'Never',
@@ -474,7 +474,7 @@ const DICT={
   overview:'\u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629',team:'\u0627\u0644\u0641\u0631\u064a\u0642',stores:'\u0627\u0644\u0645\u062a\u0627\u062c\u0631',log:'\u0633\u062c\u0644 \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a',alerts:'\u0627\u0644\u062a\u0646\u0628\u064a\u0647\u0627\u062a',settings:'\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a',
   totalVisits:'\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a',activeReps:'\u0645\u0646\u0627\u062f\u064a\u0628 \u0646\u0634\u0637\u0648\u0646',avgTime:'\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0648\u0642\u062a',compliance:'\u0627\u0644\u0627\u0644\u062a\u0632\u0627\u0645',
   visitsToday:'\u0632\u064a\u0627\u0631\u0629 \u0627\u0644\u064a\u0648\u0645',ofTeam:'\u0645\u0646 \u0627\u0644\u0641\u0631\u064a\u0642 \u0646\u0634\u0637',perVisit:'\u0644\u0643\u0644 \u0632\u064a\u0627\u0631\u0629',photoGeo:'\u0635\u0648\u0631 + \u0645\u0648\u0642\u0639 \u0645\u0637\u0627\u0628\u0642',
-  accountCoverage:'\u062a\u063a\u0637\u064a\u0629 \u0627\u0644\u062d\u0633\u0627\u0628\u0627\u062a',topReps:'\u0627\u0644\u0623\u0641\u0636\u0644 \u0623\u062f\u0627\u0621\u064b',viewAll:'\u0639\u0631\u0636 \u0627\u0644\u0643\u0644',hoursChart:'\u0633\u0627\u0639\u0627\u062a \u0627\u0644\u0639\u0645\u0644 \u0644\u0643\u0644 \u0645\u0646\u062f\u0648\u0628',catActivity:'\u0646\u0634\u0627\u0637 \u0627\u0644\u0641\u0626\u0627\u062a',gpsGapT:'{n} \u0645\u062a\u062c\u0631 \u0628\u062f\u0648\u0646 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a GPS',gpsGapS:'\u0642\u0641\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 (500 \u0645) \u064a\u0639\u0645\u0644 \u0641\u0642\u0637 \u0644\u0644\u0645\u062a\u0627\u062c\u0631 \u0627\u0644\u062a\u064a \u0644\u0647\u0627 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a. \u0627\u0636\u0628\u0637\u0647\u0627 \u062d\u062a\u0649 \u0644\u0627 \u064a\u0633\u062a\u0637\u064a\u0639 \u0627\u0644\u0645\u0646\u062f\u0648\u0628 \u0641\u062a\u062d \u0627\u0644\u0645\u062a\u062c\u0631 \u0645\u0646 \u0623\u064a \u0645\u0643\u0627\u0646 \u0622\u062e\u0631.',gpsFixBtn:'\u0645\u0639\u0627\u0644\u062c\u0629 \u0627\u0644\u0622\u0646',
+  accountCoverage:'\u062a\u063a\u0637\u064a\u0629 \u0627\u0644\u062d\u0633\u0627\u0628\u0627\u062a',topReps:'\u0627\u0644\u0623\u0641\u0636\u0644 \u0623\u062f\u0627\u0621\u064b',viewAll:'\u0639\u0631\u0636 \u0627\u0644\u0643\u0644',hoursChart:'\u0633\u0627\u0639\u0627\u062a \u0627\u0644\u0639\u0645\u0644 \u0644\u0643\u0644 \u0645\u0646\u062f\u0648\u0628',catActivity:'\u0646\u0634\u0627\u0637 \u0627\u0644\u0641\u0626\u0627\u062a',gpsGapT:'{n} \u0645\u062a\u062c\u0631 \u0628\u062f\u0648\u0646 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a GPS',gpsGapS:'\u0642\u0641\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 (500 \u0645) \u064a\u0639\u0645\u0644 \u0641\u0642\u0637 \u0644\u0644\u0645\u062a\u0627\u062c\u0631 \u0627\u0644\u062a\u064a \u0644\u0647\u0627 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a. \u0627\u0636\u0628\u0637\u0647\u0627 \u062d\u062a\u0649 \u0644\u0627 \u064a\u0633\u062a\u0637\u064a\u0639 \u0627\u0644\u0645\u0646\u062f\u0648\u0628 \u0641\u062a\u062d \u0627\u0644\u0645\u062a\u062c\u0631 \u0645\u0646 \u0623\u064a \u0645\u0643\u0627\u0646 \u0622\u062e\u0631.',gpsFixBtn:'\u0645\u0639\u0627\u0644\u062c\u0629 \u0627\u0644\u0622\u0646',gpsDenied:'\u0625\u0630\u0646 \u0627\u0644\u0645\u0648\u0642\u0639 \u0645\u062d\u0638\u0648\u0631',gpsDeniedS:'\u0641\u0639\u0651\u0644 \u0625\u0630\u0646 \u0627\u0644\u0645\u0648\u0642\u0639 \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0648\u0642\u0639 \u0641\u064a \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0645\u062a\u0635\u0641\u062d \u062b\u0645 \u0627\u0636\u063a\u0637 \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0641\u062d\u0635.',
   teamPerf:'\u0623\u062f\u0627\u0621 \u0627\u0644\u0641\u0631\u064a\u0642',rep:'\u0627\u0644\u0645\u0646\u062f\u0648\u0628',repVisits:'\u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a',repCov:'\u0627\u0644\u062a\u063a\u0637\u064a\u0629',repTime:'\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0648\u0642\u062a',repScore:'\u0627\u0644\u062a\u0642\u064a\u064a\u0645',
   storeCoverage:'\u062a\u063a\u0637\u064a\u0629 \u0627\u0644\u0645\u062a\u0627\u062c\u0631',store:'\u0627\u0644\u0645\u062a\u062c\u0631',account:'\u0627\u0644\u062d\u0633\u0627\u0628',city:'\u0627\u0644\u0645\u062f\u064a\u0646\u0629',lastVisit:'\u0622\u062e\u0631 \u0632\u064a\u0627\u0631\u0629',status:'\u0627\u0644\u062d\u0627\u0644\u0629',
   visited:'\u062a\u0645\u062a \u0632\u064a\u0627\u0631\u062a\u0647',notVisited:'\u0644\u0645 \u064a\u064f\u0632\u0631',never:'\u0623\u0628\u062f\u064b\u0627',
@@ -505,7 +505,7 @@ function applyDir(){document.documentElement.lang=CFG.lang;document.documentElem
 const $=(s,r)=>(r||document).querySelector(s);
 function el(html){const tpl=document.createElement('template');tpl.innerHTML=String(html).trim();return tpl.content.firstChild}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-function normDigits(s){return String(s==null?'':s).replace(/[\u0660-\u0669]/g,d=>d.charCodeAt(0)-0x0660).replace(/[\u06F0-\u06F9]/g,d=>d.charCodeAt(0)-0x06F0).replace(/\s+/g,'')}
+function normDigits(s){return String(s==null?'':s).replace(/[\u0660-\u0669]/g,d=>d.charCodeAt(0)-0x0660).replace(/[\u06F0-\u06F9]/g,d=>d.charCodeAt(0)-0x06F0).replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF\u00A0\u0640\u0000-\u001F]/g,'').replace(/\s+/g,'').trim()}
 const ACC_COLORS={Othaim:'#1E22C4',Panda:'#00A859',Carrefour:'#E2148C',Danube:'#7B4FB5',Lulu:'#E9A21B',Tamimi:'#0FA3C4',Farm:'#E0552E',Tier3:'#5A6173'};
 function acc(a){return ACC_COLORS[a]||'#5A6173'}
 function stringColor(s){let h=0;s=String(s||'');for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);const c=['#1E22C4','#00B4A8','#7B4FB5','#E2148C','#0FA3C4','#E0552E','#3B40FF','#0FB87E'];return c[Math.abs(h)%c.length]}
@@ -730,13 +730,13 @@ function acquireLocation(){
  if(!navigator.geolocation){v.geoState='off';if(S._refreshGeo)S._refreshGeo();return}
  navigator.geolocation.getCurrentPosition(pos=>{
   geoCache={lat:pos.coords.latitude,lng:pos.coords.longitude,t:Date.now()};
-  v.lat=pos.coords.latitude;v.lng=pos.coords.longitude;
+  v.lat=pos.coords.latitude;v.lng=pos.coords.longitude;v.acc=Math.round(pos.coords.accuracy||0);
   const st=STORES.find(s=>storeKey(s)===v.storeKey);
-  if(st&&st.lat!=null&&st.lng!=null){v.dist=haversine(v.lat,v.lng,st.lat,st.lng);v.far=v.dist>CFG.geofence;v.geoState=v.far?'far':'ok';}
+  if(st&&st.lat!=null&&st.lng!=null){v.dist=haversine(v.lat,v.lng,st.lat,st.lng);const tol=Math.min(v.acc||0,200);v.far=v.dist>(CFG.geofence+tol);v.geoState=v.far?'far':'ok';}
   else{v.geoState=CFG.requireLoc?'needs':'unset';}
-  Visits.update(v.id,{lat:v.lat,lng:v.lng,dist:v.dist,far:v.far,geoState:v.geoState});
+  Visits.update(v.id,{lat:v.lat,lng:v.lng,dist:v.dist,acc:v.acc,far:v.far,geoState:v.geoState});
   if(S._refreshGeo)S._refreshGeo();
- },err=>{v.geoState='off';if(S._refreshGeo)S._refreshGeo();},{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+ },err=>{v.geoState='off';v.geoErr=err&&err.code;if(S._refreshGeo)S._refreshGeo();},{enableHighAccuracy:true,timeout:20000,maximumAge:8000});
 }
 /* live geofence monitoring: auto-submit & exit if rep leaves the radius */
 function startMonitoring(){
@@ -749,7 +749,8 @@ function startMonitoring(){
   if(pos.coords.accuracy>150)return; // ignore unreliable fixes
   const d=haversine(pos.coords.latitude,pos.coords.longitude,st.lat,st.lng);
   S.visit.lastDist=d;
-  if(d>CFG.geofence)autoExitVisit(d);
+  const tol=Math.min(pos.coords.accuracy||0,200);
+  if(d>CFG.geofence+tol+60)autoExitVisit(d);
  },()=>{},{enableHighAccuracy:true,maximumAge:4000,timeout:20000});
 }
 function stopMonitoring(){if(S.watchId!=null&&navigator.geolocation){try{navigator.geolocation.clearWatch(S.watchId)}catch(e){}}S.watchId=null;}
@@ -774,8 +775,8 @@ function updateGeoUI(radar,box,btn){
  const v=S.visit,st=v.geoState;radar.className='radar';
  const core=radar.querySelector('.core');
  if(st==='wait'){box.className='geobox';box.innerHTML=`<div class="gt">${t('locating')}</div><div class="gs">GPS \u00b7 ${CFG.geofence} m</div>`;btn.disabled=true;btn.innerHTML='<span class="spin"></span>';}
- else if(st==='off'){radar.classList.add('off');core.innerHTML=I.alert;box.className='geobox far';box.innerHTML=`<div class="gt">${t('gpsoff')}</div><div class="gs">${t('gpsHelp')}</div>`;btn.disabled=true;btn.innerHTML=t('recheck');btn.onclick=acquireLocation;}
- else if(st==='far'){radar.classList.add('far');core.innerHTML=I.loc;box.className='geobox far';box.innerHTML=`<div class="gt">${t('locFar')}</div><div class="gs">${t('locFarS',{d:fmtDist(v.dist),r:CFG.geofence})}</div>`;btn.disabled=true;btn.innerHTML=t('recheck');btn.onclick=acquireLocation;}
+ else if(st==='off'){radar.classList.add('off');core.innerHTML=I.alert;box.className='geobox far';box.innerHTML=`<div class="gt">${v.geoErr===1?t('gpsDenied'):t('gpsoff')}</div><div class="gs">${v.geoErr===1?t('gpsDeniedS'):t('gpsHelp')}</div>`;btn.disabled=true;btn.innerHTML=t('recheck');btn.onclick=acquireLocation;}
+ else if(st==='far'){radar.classList.add('far');core.innerHTML=I.loc;box.className='geobox far';box.innerHTML=`<div class="gt">${t('locFar')}</div><div class="gs">${t('locFarS',{d:fmtDist(v.dist),r:CFG.geofence})}${v.acc?` \u00b7 \u00b1${v.acc}m`:''}</div>`;btn.disabled=true;btn.innerHTML=t('recheck');btn.onclick=acquireLocation;}
  else if(st==='needs'){radar.classList.add('off');core.innerHTML=I.alert;box.className='geobox far';box.innerHTML=`<div class="gt">${t('noCoordsT')}</div><div class="gs">${t('noCoordsS')}</div>`;btn.disabled=true;btn.innerHTML=t('recheck');btn.onclick=acquireLocation;}
  else if(st==='unset'){radar.classList.add('locked');core.innerHTML=I.check;box.className='geobox ok';box.innerHTML=`<div class="gt">${t('firstVisitT')}</div><div class="gs">${t('locUnsetS')}</div>`;btn.disabled=false;btn.innerHTML=t('startVisit');btn.onclick=()=>{const stx=STORES.find(s=>storeKey(s)===v.storeKey);if(stx&&CFG.learn){stx.lat=v.lat;stx.lng=v.lng;v.dist=0;persistData();if(typeof pushConfig==='function')pushConfig();}S.step=1;drawVisit();};}
  else if(st==='ok'){radar.classList.add('locked');core.innerHTML=I.check;box.className='geobox ok';box.innerHTML=`<div class="gt">${t('locOk')}</div><div class="gs">${t('locOkS',{d:fmtDist(v.dist)})}</div>`;btn.disabled=false;btn.innerHTML=t('startVisit');btn.onclick=()=>{S.step=1;drawVisit();};}
