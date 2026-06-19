@@ -1190,25 +1190,25 @@ function fmtDurHM(min){min=Math.max(0,Math.round(min||0));const h=Math.floor(min
 function _xlThin(){const c={argb:'FFE3E5F0'};return {top:{style:'thin',color:c},left:{style:'thin',color:c},bottom:{style:'thin',color:c},right:{style:'thin',color:c}};}
 function _xlScore(cell){const n=Number(cell.value)||0;let bg='FFEAF7EF',fg='FF1E7E45';if(n<60){bg='FFFDEAEC';fg='FFD32F4A';}else if(n<85){bg='FFFFF6E6';fg='FFB7791F';}cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};cell.font={bold:true,color:{argb:fg}};cell.alignment={horizontal:'center',vertical:'middle'};}
 function _xlStyle(ws){const BLUE='FF1E22C4',BAND='FFF4F5FD',WHITE='FFFFFFFF';
- const hr=ws.getRow(1);hr.height=24;hr.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:BLUE}};c.font={bold:true,color:{argb:WHITE},size:11};c.alignment={vertical:'middle',horizontal:'center',wrapText:true};c.border=_xlThin();});
+const hr=ws.getRow(1);hr.height=32;hr.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:BLUE}};c.font={bold:true,color:{argb:WHITE},size:11};c.alignment={vertical:'middle',horizontal:'center',wrapText:true};c.border=_xlThin();});
  ws.views=[{state:'frozen',ySplit:1}];
  for(let r=2;r<=ws.rowCount;r++){const row=ws.getRow(r);row.eachCell(c=>{c.border=_xlThin();c.alignment=Object.assign({vertical:'middle'},c.alignment||{});});if(r%2===1){row.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:BAND}};});}}
 }
 async function exportXlsx(){
  if(typeof ExcelJS==='undefined'){toast(t('updateErr'),'bad');return;}
  const all=Visits.all().filter(v=>v.status!=='open');
- const stats=repStats();const L=CFG.lang;const A=x=>L==='ar'?x[0]:x[1];
+ const stats=repStats();const L=CFG.lang;const A=x=>L==='ar'?x[0]:x[1];const B=x=>L==='ar'?(x[0]+'\n'+x[1]):(x[1]+'\n'+x[0]);
  const wb=new ExcelJS.Workbook();wb.creator='Mars Field Force';
 
  /* 1) Rep Productivity */
  const s1=wb.addWorksheet(A(['إنتاجية المناديب','Rep Productivity']));
- s1.columns=[{header:A(['المندوب','Salesman']),width:18},{header:A(['الاسم الكامل','Full name']),width:28},{header:A(['متاجر مخصصة','Assigned']),width:12},{header:A(['متاجر مغطّاة','Covered']),width:12},{header:A(['التغطية %','Coverage %']),width:12},{header:A(['الزيارات (الشهر)','Visits']),width:13},{header:A(['متوسط الوقت (د)','Avg min']),width:11},{header:A(['متوسط التقييم','Avg score']),width:12},{header:A(['زيارات بعيدة','Far']),width:9}];
+ s1.columns=[{header:B(['المندوب','Salesman']),width:18},{header:B(['الاسم الكامل','Full name']),width:28},{header:B(['متاجر مخصصة','Assigned']),width:12},{header:B(['متاجر مغطّاة','Covered']),width:12},{header:B(['التغطية %','Coverage %']),width:12},{header:B(['الزيارات (الشهر)','Visits']),width:13},{header:B(['متوسط الوقت (د)','Avg min']),width:11},{header:B(['متوسط التقييم','Avg score']),width:12},{header:B(['زيارات بعيدة','Far']),width:9}];
  stats.forEach(s=>s1.addRow([s.rep.key,(REPS.find(r=>r.key===s.rep.key)||{}).full||s.rep.name,s.total,s.covered,s.cov,s.visits,s.avgTime,s.score,s.far]));
  _xlStyle(s1);for(let r=2;r<=s1.rowCount;r++)_xlScore(s1.getRow(r).getCell(8));
 
  /* 2) Visits Detail */
  const s2=wb.addWorksheet(A(['تفاصيل الزيارات','Visits Detail']));
- s2.columns=[{header:A(['التاريخ','Date']),width:13},{header:A(['وقت الدخول','Check-in']),width:11},{header:A(['وقت الخروج','Check-out']),width:11},{header:A(['مدة الزيارة','Duration']),width:11},{header:A(['المندوب','Salesman']),width:22},{header:A(['المتجر','Store']),width:30},{header:A(['الكود','Code']),width:11},{header:A(['الحساب','Account']),width:12},{header:A(['المدينة','City']),width:13},{header:A(['النوع','Type']),width:10},{header:A(['قيمة الأوردر','Order value']),width:12},{header:A(['وحدات','Units']),width:8},{header:A(['المسافة (م)','Distance']),width:11},{header:A(['خارج النطاق','Out of range']),width:12},{header:A(['إغلاق تلقائي','Auto-closed']),width:12},{header:A(['خط العرض','Lat']),width:11},{header:A(['خط الطول','Lng']),width:11},{header:A(['صور','Photos']),width:7},{header:A(['أسعار','Prices']),width:7},{header:A(['عرض','Promo']),width:7},{header:A(['نواقص','OOS']),width:16},{header:A(['التقييم','Score']),width:8},{header:A(['ملاحظات','Notes']),width:28}];
+ s2.columns=[{header:B(['التاريخ','Date']),width:13},{header:B(['وقت الدخول','Check-in']),width:11},{header:B(['وقت الخروج','Check-out']),width:11},{header:B(['مدة الزيارة','Duration']),width:11},{header:B(['المندوب','Salesman']),width:22},{header:B(['المتجر','Store']),width:30},{header:B(['الكود','Code']),width:11},{header:B(['الحساب','Account']),width:12},{header:B(['المدينة','City']),width:13},{header:B(['النوع','Type']),width:10},{header:B(['قيمة الأوردر','Order value']),width:12},{header:B(['وحدات','Units']),width:8},{header:B(['المسافة (م)','Distance']),width:11},{header:B(['خارج النطاق','Out of range']),width:12},{header:B(['إغلاق تلقائي','Auto-closed']),width:12},{header:B(['خط العرض','Lat']),width:11},{header:B(['خط الطول','Lng']),width:11},{header:B(['صور','Photos']),width:7},{header:B(['أسعار','Prices']),width:7},{header:B(['عرض','Promo']),width:7},{header:B(['نواقص','OOS']),width:16},{header:B(['التقييم','Score']),width:8},{header:B(['ملاحظات','Notes']),width:28}];
  all.slice().sort((a,b)=>new Date(b.start)-new Date(a.start)).forEach(v=>{
   const ov=(v.orderValue!==''&&v.orderValue!=null&&!isNaN(+v.orderValue))?+v.orderValue:(v.orderValue||'');
   const row=s2.addRow([new Date(v.start),timeStr(v.start),v.end?timeStr(v.end):'',fmtDurHM(v.durationMin),v.repName||v.rep,v.storeName,v.code||'',v.account,v.city,(v.visitType==='order'?A(['أوردر','Order']):A(['تفقدية','Audit'])),ov,v.orderCases||'',v.dist==null?'':Math.round(v.dist),v.far?'YES':'',v.autoExit?'YES':'',v.lat!=null?+(+v.lat).toFixed(5):'',v.lng!=null?+(+v.lng).toFixed(5):'',Object.keys(v.photos||{}).length,v.prices?'✓':'',v.promo?'✓':'',v.oos||'',v.score||0,v.notes||'']);
@@ -1219,19 +1219,19 @@ async function exportXlsx(){
 
  /* 3) Daily Hours */
  const s3=wb.addWorksheet(A(['ساعات العمل اليومية','Daily Hours']));
- s3.columns=[{header:A(['التاريخ','Date']),width:13},{header:A(['المندوب','Salesman']),width:22},{header:A(['عدد الزيارات','Visits']),width:11},{header:A(['أول دخول','First in']),width:11},{header:A(['آخر خروج','Last out']),width:11},{header:A(['ساعات داخل المتاجر','In-store hrs']),width:15},{header:A(['امتداد يوم العمل','Workday span']),width:15}];
+ s3.columns=[{header:B(['التاريخ','Date']),width:13},{header:B(['المندوب','Salesman']),width:22},{header:B(['عدد الزيارات','Visits']),width:11},{header:B(['أول دخول','First in']),width:11},{header:B(['آخر خروج','Last out']),width:11},{header:B(['ساعات داخل المتاجر','In-store hrs']),width:15},{header:B(['امتداد يوم العمل','Workday span']),width:15}];
  const daily={};all.forEach(v=>{const day=ymd(v.start);const key=day+'|'+(v.repName||v.rep);if(!daily[key])daily[key]={day,rep:(v.repName||v.rep),visits:[],mins:0};daily[key].visits.push(v);daily[key].mins+=(v.durationMin||0);});
  Object.values(daily).sort((a,b)=>(b.day.localeCompare(a.day))||a.rep.localeCompare(b.rep)).forEach(d=>{
   const so=d.visits.slice().sort((x,y)=>new Date(x.start)-new Date(y.start));const first=so[0].start;const lv=so[so.length-1];const last=lv.end||lv.start;
   const span=Math.max(0,Math.round((new Date(last)-new Date(first))/60000));
-  const row=s3.addRow([new Date(d.day),d.rep,d.visits.length,timeStr(first),timeStr(last),+(d.mins/60).toFixed(2),fmtDurHM(span)]);
-  row.getCell(1).numFmt='dd-mmm-yyyy';row.getCell(6).numFmt='0.00';
+  const row=s3.addRow([new Date(d.day),d.rep,d.visits.length,timeStr(first),timeStr(last),fmtDurHM(d.mins),fmtDurHM(span)]);
+  row.getCell(1).numFmt='dd-mmm-yyyy';
  });
  _xlStyle(s3);
 
  /* 4) Store Coverage */
  const s4=wb.addWorksheet(A(['تغطية المتاجر','Store Coverage']));
- s4.columns=[{header:A(['المتجر','Store']),width:32},{header:A(['الحساب','Account']),width:12},{header:A(['المدينة','City']),width:14},{header:A(['المندوب','Salesman']),width:16},{header:A(['زيارات الشهر','Visits']),width:13},{header:A(['آخر زيارة','Last visit']),width:13},{header:A(['الموقع','GPS']),width:10},{header:A(['الحالة','Status']),width:14}];
+ s4.columns=[{header:B(['المتجر','Store']),width:32},{header:B(['الحساب','Account']),width:12},{header:B(['المدينة','City']),width:14},{header:B(['المندوب','Salesman']),width:16},{header:B(['زيارات الشهر','Visits']),width:13},{header:B(['آخر زيارة','Last visit']),width:13},{header:B(['الموقع','GPS']),width:10},{header:B(['الحالة','Status']),width:14}];
  const month=all.filter(v=>sameMonth(v.start,Date.now()));const byKey={};month.forEach(v=>{(byKey[v.storeKey]=byKey[v.storeKey]||[]).push(v)});
  STORES.forEach(s=>{const vs=byKey[storeKey(s)]||[];const last=vs.length?vs.slice().sort((a,b)=>new Date(b.start)-new Date(a.start))[0].start:null;
   const row=s4.addRow([s.name,s.account,s.city,s.rep,vs.length,last?new Date(last):'',s.lat!=null?'✓':'—',vs.length?A(['تمت زيارته','Visited']):A(['لم يُزر','Not visited'])]);
