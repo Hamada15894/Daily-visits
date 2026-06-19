@@ -383,7 +383,7 @@ if(!CFG._mig3){CFG.requireLoc=false;CFG.learn=true;if(CFG.minMin==null||CFG.minM
 if(!CFG._langEn){CFG.lang='en';CFG._langEn=true;LS.set('mff_cfg',CFG);}
 function saveCfg(){LS.set('mff_cfg',CFG);if(CFG.backend){clearTimeout(_cfgPushT);_cfgPushT=setTimeout(()=>{try{pushConfig()}catch(e){}},700);}}
 (function(){const os=LS.get('mff_stores',null);if(os&&os.length)STORES=os;const orp=LS.get('mff_reps',null);if(orp&&orp.length)REPS=orp;})();
-function persistData(){LS.set('mff_stores',STORES);LS.set('mff_reps',REPS)}
+let _dataPushT;function persistData(){LS.set('mff_stores',STORES);LS.set('mff_reps',REPS);if(S.role==='manager'&&CFG.backend){clearTimeout(_dataPushT);_dataPushT=setTimeout(()=>{try{pushConfig()}catch(e){}},700);}}
 const S={role:null,rep:null,screen:'home',mtab:'overview',store:null,visit:null,step:0,vfilter:'all',watchId:null};
 let geoCache=null; // {lat,lng,t}
 
@@ -433,8 +433,8 @@ const DICT={
   language:'Language',backendUrl:'Sync URL (Apps Script)',backendS:'Connect to Google Sheets for team sync',
   geofenceL:'Geofence radius (m)',geofenceS:'Max distance to start a visit',minMinL:'Min visit duration (min)',minMinS:'Below this loses time points',
   openHoursL:'Abandoned after (hours)',openHoursS:'Open visits older than this get flagged',
-  learnL:'Learn store location on 1st visit',learnS:'Used only if no GPS reference exists yet',
-  requireLocL:'Block visits with no location',requireLocS:'Strict \u2014 store must have coordinates first',
+  learnL:'Learn store location on 1st visit',learnS:'Convenient but less secure: saves the location from where the rep stands the first time',
+  requireLocL:'Strict location lock (recommended)',requireLocS:'Blocks any store with no saved coordinates \u2014 a rep can only check in within range of the real store location',
   mgrPinL:'Manager access code',resolveLoc:'Resolve store locations',resolveS:'Fetch GPS for every store link via the server',
   resolved:'Resolved {n} store locations',resolveNeed:'Connect a Sync URL first',
   updateData:'Update store data',updateS:'Upload a new Excel (stores, PINs, locations)',updateDone:'Updated {s} stores \u00b7 {r} reps',
@@ -487,8 +487,8 @@ const DICT={
   language:'\u0627\u0644\u0644\u063a\u0629',backendUrl:'\u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0632\u0627\u0645\u0646\u0629 (Apps Script)',backendS:'\u0627\u0631\u0628\u0637 \u0645\u0639 Google Sheets \u0644\u0645\u0632\u0627\u0645\u0646\u0629 \u0627\u0644\u0641\u0631\u064a\u0642',
   geofenceL:'\u0646\u0637\u0627\u0642 \u0627\u0644\u0645\u0648\u0642\u0639 (\u0645\u062a\u0631)',geofenceS:'\u0623\u0642\u0635\u0649 \u0645\u0633\u0627\u0641\u0629 \u0644\u0628\u062f\u0621 \u0627\u0644\u0632\u064a\u0627\u0631\u0629',minMinL:'\u0623\u062f\u0646\u0649 \u0645\u062f\u0629 \u0644\u0644\u0632\u064a\u0627\u0631\u0629 (\u062f\u0642\u064a\u0642\u0629)',minMinS:'\u0623\u0642\u0644 \u0645\u0646 \u0630\u0644\u0643 \u064a\u0641\u0642\u062f \u0646\u0642\u0627\u0637 \u0627\u0644\u0648\u0642\u062a',
   openHoursL:'\u062a\u064f\u0639\u062a\u0628\u0631 \u0645\u062a\u0631\u0648\u0643\u0629 \u0628\u0639\u062f (\u0633\u0627\u0639\u0627\u062a)',openHoursS:'\u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a \u0627\u0644\u0645\u0641\u062a\u0648\u062d\u0629 \u0623\u0642\u062f\u0645 \u0645\u0646 \u0630\u0644\u0643 \u062a\u064f\u0639\u0644\u0651\u0645',
-  learnL:'\u062a\u0639\u0644\u0651\u0645 \u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631 \u0641\u064a \u0623\u0648\u0644 \u0632\u064a\u0627\u0631\u0629',learnS:'\u064a\u064f\u0633\u062a\u062e\u062f\u0645 \u0641\u0642\u0637 \u0625\u0630\u0627 \u0644\u0645 \u064a\u0648\u062c\u062f \u0645\u0631\u062c\u0639 GPS',
-  requireLocL:'\u0645\u0646\u0639 \u0627\u0644\u0632\u064a\u0627\u0631\u0627\u062a \u0628\u062f\u0648\u0646 \u0645\u0648\u0642\u0639',requireLocS:'\u0635\u0627\u0631\u0645 \u2014 \u064a\u062c\u0628 \u0623\u0646 \u064a\u0643\u0648\u0646 \u0644\u0644\u0645\u062a\u062c\u0631 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a',
+  learnL:'\u062a\u0639\u0644\u0651\u0645 \u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631 \u0641\u064a \u0623\u0648\u0644 \u0632\u064a\u0627\u0631\u0629',learnS:'\u0645\u0631\u064a\u062d \u0644\u0643\u0646\u0647 \u0623\u0642\u0644 \u0623\u0645\u0627\u0646\u064b\u0627: \u064a\u062d\u0641\u0638 \u0627\u0644\u0645\u0648\u0642\u0639 \u0645\u0646 \u0645\u0643\u0627\u0646 \u0627\u0644\u0645\u0646\u062f\u0648\u0628 \u0641\u064a \u0623\u0648\u0644 \u0645\u0631\u0629',
+  requireLocL:'\u0627\u0644\u0642\u0641\u0644 \u0627\u0644\u0635\u0627\u0631\u0645 \u0644\u0644\u0645\u0648\u0642\u0639 (\u0645\u064f\u0648\u0635\u0649 \u0628\u0647)',requireLocS:'\u064a\u0645\u0646\u0639 \u0627\u0644\u062f\u062e\u0648\u0644 \u0644\u0623\u064a \u0645\u062a\u062c\u0631 \u0628\u0644\u0627 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a \u0645\u062d\u0641\u0648\u0638\u0629 \u2014 \u0644\u0627 \u064a\u064f\u0633\u0645\u062d \u0628\u0627\u0644\u062f\u062e\u0648\u0644 \u0625\u0644\u0627 \u062f\u0627\u062e\u0644 \u0646\u0637\u0627\u0642 \u0627\u0644\u0645\u0648\u0642\u0639 \u0627\u0644\u062d\u0642\u064a\u0642\u064a \u0644\u0644\u0645\u062a\u062c\u0631',
   mgrPinL:'\u0631\u0645\u0632 \u062f\u062e\u0648\u0644 \u0627\u0644\u0645\u062f\u064a\u0631',resolveLoc:'\u0627\u0633\u062a\u062e\u0631\u0627\u062c \u0645\u0648\u0627\u0642\u0639 \u0627\u0644\u0645\u062a\u0627\u062c\u0631',resolveS:'\u062c\u0644\u0628 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a \u0643\u0644 \u0631\u0627\u0628\u0637 \u0645\u062a\u062c\u0631 \u0639\u0628\u0631 \u0627\u0644\u062e\u0627\u062f\u0645',
   resolved:'\u062a\u0645 \u0627\u0633\u062a\u062e\u0631\u0627\u062c {n} \u0645\u0648\u0642\u0639 \u0645\u062a\u062c\u0631',resolveNeed:'\u0627\u0631\u0628\u0637 \u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0632\u0627\u0645\u0646\u0629 \u0623\u0648\u0644\u0627\u064b',
   updateData:'\u062a\u062d\u062f\u064a\u062b \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0645\u062a\u0627\u062c\u0631',updateS:'\u0627\u0631\u0641\u0639 \u0645\u0644\u0641 Excel \u062c\u062f\u064a\u062f (\u0627\u0644\u0645\u062a\u0627\u062c\u0631\u060c \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0633\u0631\u064a\u0629\u060c \u0627\u0644\u0645\u0648\u0627\u0642\u0639)',updateDone:'\u062a\u0645 \u062a\u062d\u062f\u064a\u062b {s} \u0645\u062a\u062c\u0631 \u00b7 {r} \u0645\u0646\u062f\u0648\u0628',
@@ -733,7 +733,7 @@ function acquireLocation(){
   geoCache={lat:pos.coords.latitude,lng:pos.coords.longitude,t:Date.now()};
   v.lat=pos.coords.latitude;v.lng=pos.coords.longitude;v.acc=Math.round(pos.coords.accuracy||0);
   const st=STORES.find(s=>storeKey(s)===v.storeKey);
-  if(st&&st.lat!=null&&st.lng!=null){v.dist=haversine(v.lat,v.lng,st.lat,st.lng);const tol=Math.min(v.acc||0,200);v.far=v.dist>(CFG.geofence+tol);v.geoState=v.far?'far':'ok';}
+  if(st&&st.lat!=null&&st.lng!=null){v.dist=haversine(v.lat,v.lng,st.lat,st.lng);const tol=Math.min(v.acc||0,75);v.far=v.dist>(CFG.geofence+tol);v.geoState=v.far?'far':'ok';}
   else{v.geoState=CFG.requireLoc?'needs':'unset';}
   Visits.update(v.id,{lat:v.lat,lng:v.lng,dist:v.dist,acc:v.acc,far:v.far,geoState:v.geoState});
   if(S._refreshGeo)S._refreshGeo();
@@ -750,7 +750,7 @@ function startMonitoring(){
   if(pos.coords.accuracy>150)return; // ignore unreliable fixes
   const d=haversine(pos.coords.latitude,pos.coords.longitude,st.lat,st.lng);
   S.visit.lastDist=d;
-  const tol=Math.min(pos.coords.accuracy||0,200);
+  const tol=Math.min(pos.coords.accuracy||0,75);
   if(d>CFG.geofence+tol+60)autoExitVisit(d);
  },()=>{},{enableHighAccuracy:true,maximumAge:4000,timeout:20000});
 }
@@ -1011,18 +1011,18 @@ function mSettings(c){
  beIn.onchange=e=>{CFG.backend=e.target.value.trim();saveCfg();toast(t('saved'),'ok')};
  c.appendChild(grp(t('cfgGen'),[row(t('language'),'EN / AR',langSel),row(t('backendUrl'),t('backendS'),beIn)]));
 
- const geoIn=el(`<input class="tinput" type="number" value="${CFG.geofence}" style="max-width:110px">`);geoIn.onchange=e=>{CFG.geofence=+e.target.value||600;saveCfg();toast(t('saved'),'ok')};
- const minIn=el(`<input class="tinput" type="number" value="${CFG.minMin}" style="max-width:110px">`);minIn.onchange=e=>{CFG.minMin=+e.target.value||8;saveCfg();toast(t('saved'),'ok')};
- const ohIn=el(`<input class="tinput" type="number" value="${CFG.openHours}" style="max-width:110px">`);ohIn.onchange=e=>{CFG.openHours=+e.target.value||4;saveCfg();toast(t('saved'),'ok')};
+ const geoIn=el(`<input class="tinput" type="number" value="${CFG.geofence}" style="max-width:110px">`);geoIn.onchange=e=>{CFG.geofence=+e.target.value||600;saveCfgV();toast(t('saved'),'ok')};
+ const minIn=el(`<input class="tinput" type="number" value="${CFG.minMin}" style="max-width:110px">`);minIn.onchange=e=>{CFG.minMin=+e.target.value||8;saveCfgV();toast(t('saved'),'ok')};
+ const ohIn=el(`<input class="tinput" type="number" value="${CFG.openHours}" style="max-width:110px">`);ohIn.onchange=e=>{CFG.openHours=+e.target.value||4;saveCfgV();toast(t('saved'),'ok')};
  c.appendChild(grp(t('cfgGeo'),[
   row(t('geofenceL'),t('geofenceS'),geoIn),row(t('minMinL'),t('minMinS'),minIn),row(t('openHoursL'),t('openHoursS'),ohIn),
-  row(t('learnL'),t('learnS'),swc(CFG.learn,v=>{CFG.learn=v;saveCfg()})),
-  row(t('requireLocL'),t('requireLocS'),swc(CFG.requireLoc,v=>{CFG.requireLoc=v;saveCfg()})),
+  row(t('learnL'),t('learnS'),swc(CFG.learn,v=>{CFG.learn=v;saveCfgV()})),
+  row(t('requireLocL'),t('requireLocS'),swc(CFG.requireLoc,v=>{CFG.requireLoc=v;saveCfgV()})),
  ]));
 
  // ---- Photo requirements (global default) ----
  const pr=Object.assign({},PHOTO_DEFAULT,CFG.photoReq||{});
- const photoRows=PHOTO_KEYS.map(([k,lbl])=>row(t(lbl),'',swc(pr[k],v=>{CFG.photoReq=Object.assign({},pr,CFG.photoReq);CFG.photoReq[k]=v;pr[k]=v;saveCfg();toast(t('saved'),'ok')})));
+ const photoRows=PHOTO_KEYS.map(([k,lbl])=>row(t(lbl),'',swc(pr[k],v=>{CFG.photoReq=Object.assign({},pr,CFG.photoReq);CFG.photoReq[k]=v;pr[k]=v;saveCfgV();toast(t('saved'),'ok')})));
  const perRepBtn=el(`<button class="minib tl">${I.user}<span>${t('perRep')}</span></button>`);perRepBtn.onclick=()=>perRepSheet();
  photoRows.push(row(t('perRep'),t('perRepS'),perRepBtn));
  c.appendChild(grp(t('photoRules'),photoRows));
@@ -1037,7 +1037,7 @@ function mSettings(c){
  if(S.focusData){S.focusData=false;setTimeout(()=>{if(dataGrp.scrollIntoView)dataGrp.scrollIntoView({behavior:'smooth',block:'center'});},80);}
 
  // ---- security ----
- const mpinIn=el(`<input class="tinput" value="${esc(CFG.mgrPin)}" style="max-width:130px">`);mpinIn.onchange=e=>{CFG.mgrPin=normDigits(e.target.value)||DEFAULT_MGR_PIN;saveCfg();toast(t('saved'),'ok')};
+ const mpinIn=el(`<input class="tinput" value="${esc(CFG.mgrPin)}" style="max-width:130px">`);mpinIn.onchange=e=>{CFG.mgrPin=normDigits(e.target.value)||DEFAULT_MGR_PIN;saveCfgV();toast(t('saved'),'ok')};
  c.appendChild(grp(t('cfgSec'),[row(t('mgrPinL'),'',mpinIn)]));
 
  const genBtn=el(`<button class="minib">${I.spark}<span>${t('genDemo')}</span></button>`);genBtn.onclick=()=>{seedDemo();toast(t('saved'),'ok');S.mtab='overview';renderManager()};
@@ -1060,8 +1060,8 @@ function repRulesSheet(r,parent){
  const m=el(`<div class="modal"><div class="msheet"><div class="mh"><div class="mt">${t('repRules',{r:esc((r.name).split(' ')[0])})}</div><button class="iconbtn" id="mx">${I.x}</button></div><div class="card" id="rr"></div><button class="minib dn" id="reset" style="margin-top:16px;width:100%;justify-content:center;padding:14px">${I.refresh}<span>${t('resetRep')}</span></button></div></div>`);
  const rr=m.querySelector('#rr');
  PHOTO_KEYS.forEach(([k,lbl])=>{const r2=el(`<div class="setrow"><div class="grow"><div class="srl">${t(lbl)}</div></div><div class="sw ${cur[k]?'on':''}"></div></div>`);
-  r2.querySelector('.sw').parentElement.onclick=()=>{cur[k]=!cur[k];r2.querySelector('.sw').classList.toggle('on',cur[k]);CFG.repPhotoReq=CFG.repPhotoReq||{};CFG.repPhotoReq[r.key]=Object.assign({},cur);saveCfg()};rr.appendChild(r2)});
- m.querySelector('#reset').onclick=()=>{if(CFG.repPhotoReq)delete CFG.repPhotoReq[r.key];saveCfg();toast(t('saved'),'ok');m.remove();if(parent)parent.remove();perRepSheet()};
+  r2.querySelector('.sw').parentElement.onclick=()=>{cur[k]=!cur[k];r2.querySelector('.sw').classList.toggle('on',cur[k]);CFG.repPhotoReq=CFG.repPhotoReq||{};CFG.repPhotoReq[r.key]=Object.assign({},cur);saveCfgV()};rr.appendChild(r2)});
+ m.querySelector('#reset').onclick=()=>{if(CFG.repPhotoReq)delete CFG.repPhotoReq[r.key];saveCfgV();toast(t('saved'),'ok');m.remove();if(parent)parent.remove();perRepSheet()};
  m.querySelector('#mx').onclick=()=>{m.remove();if(parent){parent.remove();perRepSheet()}};m.onclick=e=>{if(e.target===m){m.remove();if(parent){parent.remove();perRepSheet()}}};OV.appendChild(m);
 }
 
@@ -1127,9 +1127,10 @@ function handleDataUpload(e){
  }catch(err){toast(t('updateErr'),'bad')}};
  fr.readAsArrayBuffer(f);
 }
-function syncedSettings(){return {photoReq:CFG.photoReq,repPhotoReq:CFG.repPhotoReq,geofence:CFG.geofence,minMin:CFG.minMin,openHours:CFG.openHours,requireLoc:CFG.requireLoc,learn:CFG.learn,mgrPin:CFG.mgrPin};}
-async function pushConfig(){if(!CFG.backend)return;try{await fetch(CFG.backend,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveConfig',stores:STORES,reps:REPS,settings:syncedSettings()})})}catch(e){}}
-async function pullConfig(){if(!CFG.backend)return;try{const r=await fetch(CFG.backend+'?action=getConfig');const d=await r.json();if(d&&d.config){const c=d.config;if(c.stores&&c.stores.length){STORES=c.stores;LS.set('mff_stores',STORES);}if(c.reps&&c.reps.length){REPS=c.reps;LS.set('mff_reps',REPS);}if(c.settings){const ss=c.settings;['photoReq','repPhotoReq','geofence','minMin','openHours','requireLoc','learn','mgrPin'].forEach(k=>{if(ss[k]!==undefined&&ss[k]!==null)CFG[k]=ss[k];});LS.set('mff_cfg',CFG);}}}catch(e){}}
+function saveCfgV(){CFG._cfgTs=Date.now();saveCfg();}
+function syncedSettings(){return {photoReq:CFG.photoReq,repPhotoReq:CFG.repPhotoReq,geofence:CFG.geofence,minMin:CFG.minMin,openHours:CFG.openHours,requireLoc:CFG.requireLoc,learn:CFG.learn,mgrPin:CFG.mgrPin,_cfgTs:CFG._cfgTs||0};}
+async function pushConfig(){if(!CFG.backend||S.role!=='manager')return;try{await fetch(CFG.backend,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveConfig',stores:STORES,reps:REPS,settings:syncedSettings()})})}catch(e){}}
+async function pullConfig(){if(!CFG.backend)return;try{const r=await fetch(CFG.backend+'?action=getConfig');const d=await r.json();if(d&&d.config){const c=d.config;if(c.stores&&c.stores.length){const bmap={};c.stores.forEach(x=>{bmap[storeKey(x)]=x});STORES.forEach(s2=>{const b=bmap[storeKey(s2)];if(b){if(b.lat!=null&&b.lng!=null){s2.lat=b.lat;s2.lng=b.lng;}if(b.rep)s2.rep=b.rep;}});LS.set('mff_stores',STORES);}if(c.reps&&c.reps.length){const rmap={};c.reps.forEach(x=>{rmap[x.key]=x});REPS.forEach(r=>{const b=rmap[r.key];if(b){if(b.pin)r.pin=b.pin;if(b.full)r.full=b.full;if(b.name)r.name=b.name;}});LS.set('mff_reps',REPS);}if(c.settings){const ss=c.settings;if((ss._cfgTs||0)>=(CFG._cfgTs||0)){['photoReq','repPhotoReq','geofence','minMin','openHours','requireLoc','learn','mgrPin'].forEach(k=>{if(ss[k]!==undefined&&ss[k]!==null)CFG[k]=ss[k];});CFG._cfgTs=ss._cfgTs||CFG._cfgTs||0;LS.set('mff_cfg',CFG);}}}}catch(e){}}
 async function resolveLocations(btn){
  if(!CFG.backend){toast(t('resolveNeed'),'bad');return}
  const orig=btn.innerHTML;btn.innerHTML='<span class="spin"></span>';btn.style.pointerEvents='none';
