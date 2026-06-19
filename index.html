@@ -113,6 +113,13 @@ body.auth-mode .app{max-width:none;background:transparent;min-height:100dvh}
 .camx{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.2);border:none;color:#fff;display:grid;place-items:center;cursor:pointer}
 .camx svg{width:22px;height:22px}
 body.cam-open{overflow:hidden}
+.pwrap{display:flex;flex-direction:column;gap:6px}
+.pcell.na{border-style:solid;border-color:var(--line);background:#F4F5FA}
+.req.na{background:#6b7280!important;color:#fff}
+.nastock{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:7px;border:1px dashed var(--line);background:transparent;border-radius:10px;font-size:11.5px;font-weight:600;color:var(--mut);cursor:pointer}
+.nastock.on{background:#EFF1F5;border-style:solid;color:var(--ink)}
+.nastock svg{width:14px;height:14px}
+
 .ab-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
 .ab-go{white-space:nowrap}
 .ab-discard{background:transparent;border:1px solid rgba(210,47,74,.4);color:#c2334a;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
@@ -386,7 +393,7 @@ const LS = {
   set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},
   del:(k)=>{try{localStorage.removeItem(k)}catch(e){}}
 };
-const CFG = Object.assign({lang:'en',backend:'',geofence:500,minMin:40,mgrPin:DEFAULT_MGR_PIN,openHours:4,exitRadius:800,learn:true,requireLoc:false,photoReq:{shelf:true,fruity:true,back:true,price:true,promo:true},repPhotoReq:{}},LS.get('mff_cfg',{}));
+const CFG = Object.assign({lang:'en',backend:'',geofence:500,minMin:40,mgrPin:DEFAULT_MGR_PIN,openHours:4,exitRadius:800,clearedBefore:0,learn:true,requireLoc:false,photoReq:{shelf:true,fruity:true,back:true,price:true,promo:true},repPhotoReq:{}},LS.get('mff_cfg',{}));
 if(DEFAULT_BACKEND&&!CFG.backend)CFG.backend=DEFAULT_BACKEND;
 try{const hm=(location.hash||'').match(/sync=([^&]+)/);if(hm){CFG.backend=decodeURIComponent(hm[1]);LS.set('mff_cfg',CFG);history.replaceState(null,'',location.pathname+location.search);}}catch(e){}
 let _cfgPushT;
@@ -420,7 +427,7 @@ const DICT={
   gpsHelp:'Allow location for this site, then tap recheck. After the first time it is automatic.',
   photos:'Store / section photos',photosSub:'',
   ph_shelf:'Main shelf',ph_fruity:'Fruity section',ph_back:'Back / stock room',ph_price:'Pricing',ph_promo:'Promotion',
-  required:'Required',optional:'Optional',allPhotos:'Capture {n} more to continue',
+  required:'Required',optional:'Optional',noStock:'No merchandise',noStockBtn:'No merchandise here',allPhotos:'Capture {n} more to continue',
   photoRules:'Photo requirements',photoRulesS:'Which photos are mandatory by default',perRep:'Per-rep photo rules',perRepS:'Open or lock specific photos for individual reps',useDefault:'Use default',customized:'Customized',resetRep:'Reset to default',repRules:'Photo rules — {r}',
   activity:'Store activity',activitySub:'Log what you worked on during this visit.',visitTypeL:'Visit type',vtAudit:'Audit',vtOrder:'Order',orderValueL:'Order value (SAR)',orderValueP:'e.g. 4500',orderUnitsL:'Cases / units',orderUnitsP:'e.g. 30',orderL:'Order',filterType:'All types',
   cats:'Categories worked',pricesL:'Prices checked & corrected',pricesS:'Verified shelf pricing',
@@ -474,7 +481,7 @@ const DICT={
   gpsHelp:'\u0627\u0633\u0645\u062d \u0628\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0645\u0648\u0642\u0639 \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0648\u0642\u0639\u060c \u062b\u0645 \u0623\u0639\u062f \u0627\u0644\u0641\u062d\u0635. \u0628\u0639\u062f \u0623\u0648\u0644 \u0645\u0631\u0629 \u064a\u0635\u0628\u062d \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',
   photos:'\u0635\u0648\u0631 \u0627\u0644\u0645\u062a\u062c\u0631 / \u0627\u0644\u0623\u0642\u0633\u0627\u0645',photosSub:'',
   ph_shelf:'\u0627\u0644\u0631\u0641 \u0627\u0644\u0631\u0626\u064a\u0633\u064a',ph_fruity:'\u0642\u0633\u0645 \u0641\u0631\u0648\u062a\u064a',ph_back:'\u0627\u0644\u0628\u0627\u0628 \u0627\u0644\u062e\u0644\u0641\u064a / \u0627\u0644\u0645\u062e\u0632\u0646',ph_price:'\u0627\u0644\u0623\u0633\u0639\u0627\u0631',ph_promo:'\u0627\u0644\u0639\u0631\u0636 \u0627\u0644\u062a\u0631\u0648\u064a\u062c\u064a',
-  required:'\u0645\u0637\u0644\u0648\u0628\u0629',optional:'\u0627\u062e\u062a\u064a\u0627\u0631\u064a\u0629',allPhotos:'\u0627\u0644\u062a\u0642\u0637 {n} \u0623\u062e\u0631\u0649 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629',
+  required:'\u0645\u0637\u0644\u0648\u0628\u0629',optional:'\u0627\u062e\u062a\u064a\u0627\u0631\u064a\u0629',noStock:'\u0644\u0627 \u062a\u0648\u062c\u062f \u0628\u0636\u0627\u0639\u0629',noStockBtn:'\u0644\u0627 \u062a\u0648\u062c\u062f \u0628\u0636\u0627\u0639\u0629 \u0647\u0646\u0627',allPhotos:'\u0627\u0644\u062a\u0642\u0637 {n} \u0623\u062e\u0631\u0649 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629',
   photoRules:'\u0627\u0644\u0635\u0648\u0631 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629',photoRulesS:'\u0623\u064a \u0627\u0644\u0635\u0648\u0631 \u0625\u0644\u0632\u0627\u0645\u064a\u0629 \u0627\u0641\u062a\u0631\u0627\u0636\u064a\u064b\u0627',perRep:'\u0642\u0648\u0627\u0639\u062f \u0627\u0644\u0635\u0648\u0631 \u0644\u0643\u0644 \u0645\u0646\u062f\u0648\u0628',perRepS:'\u0627\u0641\u062a\u062d \u0623\u0648 \u0627\u0642\u0641\u0644 \u0635\u0648\u0631\u064b\u0627 \u0645\u0639\u064a\u0651\u0646\u0629 \u0644\u0645\u0646\u0627\u062f\u064a\u0628 \u0645\u062d\u062f\u062f\u064a\u0646',useDefault:'\u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a',customized:'\u0645\u062e\u0635\u0635',resetRep:'\u0625\u0639\u0627\u062f\u0629 \u0644\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a',repRules:'\u0642\u0648\u0627\u0639\u062f \u0627\u0644\u0635\u0648\u0631 \u2014 {r}',
   activity:'\u0646\u0634\u0627\u0637 \u0627\u0644\u0645\u062a\u062c\u0631',activitySub:'\u0633\u062c\u0651\u0644 \u0645\u0627 \u0642\u0645\u062a \u0628\u0647 \u062e\u0644\u0627\u0644 \u0647\u0630\u0647 \u0627\u0644\u0632\u064a\u0627\u0631\u0629.',visitTypeL:'\u0646\u0648\u0639 \u0627\u0644\u0632\u064a\u0627\u0631\u0629',vtAudit:'\u062a\u0641\u0642\u062f\u064a\u0629',vtOrder:'\u0623\u0648\u0631\u062f\u0631',orderValueL:'\u0642\u064a\u0645\u0629 \u0627\u0644\u0623\u0648\u0631\u062f\u0631 (\u0631.\u0633)',orderValueP:'\u0645\u062b\u0627\u0644: 4500',orderUnitsL:'\u0643\u0631\u0627\u062a\u064a\u0646 / \u0648\u062d\u062f\u0627\u062a',orderUnitsP:'\u0645\u062b\u0627\u0644: 30',orderL:'\u0623\u0648\u0631\u062f\u0631',filterType:'\u0643\u0644 \u0627\u0644\u0623\u0646\u0648\u0627\u0639',
   cats:'\u0627\u0644\u0623\u0635\u0646\u0627\u0641 \u0627\u0644\u062a\u064a \u0639\u0645\u0644\u062a \u0639\u0644\u064a\u0647\u0627',pricesL:'\u0641\u062d\u0635 \u0648\u062a\u0635\u062d\u064a\u062d \u0627\u0644\u0623\u0633\u0639\u0627\u0631',pricesS:'\u062a\u0645 \u0627\u0644\u062a\u062d\u0642\u0642 \u0645\u0646 \u0627\u0644\u0623\u0633\u0639\u0627\u0631',
@@ -540,6 +547,7 @@ function storesOf(rep){return STORES.filter(s=>s.rep===rep)}
 /* icons */
 const I={
  loc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+ box:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
  cam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L19 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg>',
  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>',
  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>',
@@ -582,7 +590,7 @@ const Visits={
  async syncPending(){if(!CFG.backend)return;const a=this.all().filter(v=>v.status==='done'&&!v.synced);for(const v of a){await this.push(v);}},
  update(id,patch){const a=this.all();const i=a.findIndex(x=>x.id===id);if(i>=0){a[i]=Object.assign(a[i],patch);this.save(a);if(a[i].status!=='open')this.push(a[i])}return a[i]},
  async push(v){if(!CFG.backend)return;try{const r=await fetch(CFG.backend,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveVisit',visit:v})});let d=null;try{d=await r.json()}catch(e){}const a=this.all();const i=a.findIndex(x=>x.id===v.id);if(i>=0){a[i].synced=true;if(d&&d.photoUrls&&Object.keys(d.photoUrls).length)a[i].photos=d.photoUrls;this.save(a)}}catch(e){}},
- async pull(){if(!CFG.backend)return;try{const r=await fetch(CFG.backend+'?action=getVisits');const d=await r.json();if(d&&d.visits){const local=this.all().filter(x=>!x.synced);const map={};d.visits.forEach(v=>map[v.id]=v);local.forEach(v=>map[v.id]=v);const cx=LS.get('mff_cancelled',[]);const merged=Object.values(map).filter(v=>v.status!=='cancelled'&&cx.indexOf(v.id)<0);this.cache=merged;try{LS.set(this.key,this.prune(merged))}catch(e){}}}catch(e){}}
+ async pull(){if(!CFG.backend)return;try{const r=await fetch(CFG.backend+'?action=getVisits');const d=await r.json();if(d&&d.visits){const local=this.all().filter(x=>!x.synced);const map={};d.visits.forEach(v=>map[v.id]=v);local.forEach(v=>map[v.id]=v);const cx=LS.get('mff_cancelled',[]);const cb=CFG.clearedBefore||0;const merged=Object.values(map).filter(v=>v.status!=='cancelled'&&cx.indexOf(v.id)<0&&new Date(v.start).getTime()>cb);this.cache=merged;try{LS.set(this.key,this.prune(merged))}catch(e){}}}catch(e){}}
 };
 
 const APP=$('#app'),OV=$('#overlay');
@@ -722,7 +730,7 @@ function RepProfile(rep){
 /* ============ VISIT FLOW ============ */
 function startVisit(store){
  S.store=store;
- S.visit={id:'v'+Date.now()+Math.random().toString(36).slice(2,6),rep:S.rep,repName:(repByKey(S.rep).full||S.rep),storeKey:storeKey(store),storeName:store.name,account:store.account,city:store.city,code:store.code,start:nowISO(),status:'open',lat:null,lng:null,dist:null,far:false,geoState:'wait',photos:{},visitType:'audit',orderValue:'',orderCases:'',cats:[],prices:false,promo:false,oos:'',notes:'',synced:false};
+ S.visit={id:'v'+Date.now()+Math.random().toString(36).slice(2,6),rep:S.rep,repName:(repByKey(S.rep).full||S.rep),storeKey:storeKey(store),storeName:store.name,account:store.account,city:store.city,code:store.code,start:nowISO(),status:'open',lat:null,lng:null,dist:null,far:false,geoState:'wait',photos:{},naPhotos:{},visitType:'audit',orderValue:'',orderCases:'',cats:[],prices:false,promo:false,oos:'',notes:'',synced:false};
  S.visit.geoState='intro';S.step=0;drawVisit();beginGeo();
 }
 function resumeVisit(v){
@@ -815,19 +823,24 @@ const PHOTO_KEYS=[['shelf','ph_shelf'],['fruity','ph_fruity'],['back','ph_back']
 const PHOTO_DEFAULT={shelf:true,fruity:true,back:true,price:true,promo:true};
 function photoReqFor(repKey){const base=Object.assign({},PHOTO_DEFAULT,CFG.photoReq||{});const per=(CFG.repPhotoReq||{})[repKey];return per?Object.assign({},base,per):base}
 function requiredKeysFor(repKey){const r=photoReqFor(repKey);return PHOTO_KEYS.filter(([k])=>r[k]).map(([k])=>k)}
-function photoComplete(v){return requiredKeysFor(v.rep).every(k=>v.photos&&v.photos[k])}
+function photoComplete(v){return requiredKeysFor(v.rep).every(k=>(v.photos&&v.photos[k])||(v.naPhotos&&v.naPhotos[k]))}
 function stepPhotos(body,foot){
  body.innerHTML=`<div class="steptitle">${t('photos')}</div>`;
  const stx0=STORES.find(s=>storeKey(s)===S.visit.storeKey);if(stx0&&stx0.lat!=null)body.appendChild(el(`<div class="alertban amber" style="margin-bottom:16px"><div class="ab-ic">${I.loc}</div><div class="grow"><div class="ab-s">${t('monitoring')}</div></div></div>`));
  const req=photoReqFor(S.visit.rep);
  const grid=el('<div class="pgrid"></div>');
- PHOTO_KEYS.forEach(([k,lbl])=>{const has=S.visit.photos[k];const isReq=req[k];
-  const tag=has?`<span class="badge">${I.check}</span>`:(isReq?`<span class="req">${t('required')}</span>`:`<span class="req" style="background:var(--mut2)">${t('optional')}</span>`);
-  const cell=el(`<button type="button" class="pcell ${has?'full':''}">${has?`<img src="${has}">`:''}${tag}${has?'':`<div class="pi">${I.cam}</div><div class="pl">${t(lbl)}</div>`}</button>`);
-  cell.onclick=()=>openCamera(k);grid.appendChild(cell)});
+ PHOTO_KEYS.forEach(([k,lbl])=>{const has=S.visit.photos[k];const na=S.visit.naPhotos&&S.visit.naPhotos[k];const isReq=req[k];
+  const tag=has?`<span class="badge">${I.check}</span>`:na?`<span class="req na">${t('noStock')}</span>`:(isReq?`<span class="req">${t('required')}</span>`:`<span class="req" style="background:var(--mut2)">${t('optional')}</span>`);
+  const inner=has?`<img src="${has}">`:na?`<div class="pi">${I.box}</div><div class="pl">${t('noStock')}</div>`:`<div class="pi">${I.cam}</div><div class="pl">${t(lbl)}</div>`;
+  const wrap=el('<div class="pwrap"></div>');
+  const cell=el(`<button type="button" class="pcell ${has?'full':''} ${na?'na':''}">${tag}${inner}</button>`);
+  cell.onclick=()=>{if(na){if(S.visit.naPhotos)delete S.visit.naPhotos[k];Visits.update(S.visit.id,{naPhotos:S.visit.naPhotos});drawVisit();}else openCamera(k)};
+  wrap.appendChild(cell);
+  if(!has){const nb=el(`<button type="button" class="nastock ${na?'on':''}">${na?I.check:''}<span>${t('noStockBtn')}</span></button>`);nb.onclick=()=>{S.visit.naPhotos=S.visit.naPhotos||{};if(na)delete S.visit.naPhotos[k];else S.visit.naPhotos[k]=true;Visits.update(S.visit.id,{naPhotos:S.visit.naPhotos});drawVisit();};wrap.appendChild(nb);}
+  grid.appendChild(wrap)});
  body.appendChild(grid);
  foot.innerHTML='';
- const missing=requiredKeysFor(S.visit.rep).filter(k=>!S.visit.photos[k]).length;
+ const missing=requiredKeysFor(S.visit.rep).filter(k=>!S.visit.photos[k]&&!(S.visit.naPhotos&&S.visit.naPhotos[k])).length;
  const btn=el(`<button class="btn go" ${missing?'disabled':''}>${missing?t('allPhotos',{n:missing}):t('activity')}</button>`);
  btn.onclick=()=>{S.step=2;drawVisit()};foot.appendChild(btn);
 }
@@ -884,7 +897,7 @@ function stepActivity(body,foot){
  const f4=el(`<div class="field"><label>${t('notesL')}</label><textarea class="tinput" id="notes" placeholder="${t('notesP')}">${esc(v.notes)}</textarea></div>`);f4.querySelector('#notes').oninput=e=>v.notes=e.target.value;body.appendChild(f4);
  foot.innerHTML='';const btn=el(`<button class="btn go">${I.check}<span>${t('checkout')}</span></button>`);btn.onclick=()=>finishVisit(btn);foot.appendChild(btn);
 }
-function scoreVisit(v){const rk=requiredKeysFor(v.rep);const capReq=rk.filter(k=>v.photos&&v.photos[k]).length;let photo=rk.length?Math.round(capReq/rk.length*50):Math.min(50,Object.keys(v.photos||{}).length*10);const geo=(v.geoState==='ok'||v.geoState==='unset')?20:0;const dur=v.durationMin>=CFG.minMin?15:Math.round(Math.min(v.durationMin||0,CFG.minMin)/CFG.minMin*15);const act=(v.prices?8:0)+(v.promo?7:0);return{photo,geo,dur,act,total:Math.min(100,photo+geo+dur+act)}}
+function scoreVisit(v){const rk=requiredKeysFor(v.rep);const capReq=rk.filter(k=>(v.photos&&v.photos[k])||(v.naPhotos&&v.naPhotos[k])).length;let photo=rk.length?Math.round(capReq/rk.length*50):Math.min(50,Object.keys(v.photos||{}).length*10);const geo=(v.geoState==='ok'||v.geoState==='unset')?20:0;const dur=v.durationMin>=CFG.minMin?15:Math.round(Math.min(v.durationMin||0,CFG.minMin)/CFG.minMin*15);const act=(v.prices?8:0)+(v.promo?7:0);return{photo,geo,dur,act,total:Math.min(100,photo+geo+dur+act)}}
 function finishVisit(btn){
  stopMonitoring();
  const v=S.visit;v.end=nowISO();v.durationMin=Math.max(1,Math.round((new Date(v.end)-new Date(v.start))/60000));
@@ -911,7 +924,7 @@ function manAlerts(){
 function renderManager(){
  const a=manAlerts();
  APP.innerHTML='';OV.innerHTML='';
- APP.appendChild(TopBar('Hamada \u00b7 '+t('manager'),t('appname')));
+ APP.appendChild(TopBar(t('manager'),t('appname')));
  const page=el('<div class="page"></div>');
  const tabs=[['overview',I.grid,t('overview')],['team',I.team,t('team')],['stores',I.shop,t('stores')],['log',I.list,t('log')],['alerts',I.bell,t('alerts')],['settings',I.gear,t('settings')]];
  const tb=el('<div class="mtabs"></div>');
@@ -1071,7 +1084,7 @@ function mSettings(c){
  c.appendChild(grp(t('cfgSec'),[row(t('mgrPinL'),'',mpinIn)]));
 
  const genBtn=el(`<button class="minib">${I.spark}<span>${t('genDemo')}</span></button>`);genBtn.onclick=()=>{seedDemo();toast(t('saved'),'ok');S.mtab='overview';renderManager()};
- const clrBtn=el(`<button class="minib dn">${I.trash}<span>${t('clearAll')}</span></button>`);clrBtn.onclick=()=>{if(confirm(t('confirmClear'))){Visits.save([]);toast(t('cleared'),'ok');renderManager()}};
+ const clrBtn=el(`<button class="minib dn">${I.trash}<span>${t('clearAll')}</span></button>`);clrBtn.onclick=async()=>{if(!confirm(t('confirmClear')))return;CFG.clearedBefore=Date.now();saveCfgV();if(CFG.backend){try{await fetch(CFG.backend,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'clearVisits'})})}catch(e){}}Visits.cache=[];Visits.save([]);toast(t('cleared'),'ok');renderManager();};
  c.appendChild(grp(t('cfgDemo'),[row(t('genDemo'),t('genS'),genBtn),row(t('clearAll'),t('clearS'),clrBtn)]));
 
  const out=el(`<button class="minib dn" style="width:100%;justify-content:center;padding:15px">${I.x}<span>${t('signout')}</span></button>`);out.onclick=signout;c.appendChild(out);
@@ -1158,9 +1171,9 @@ function handleDataUpload(e){
  fr.readAsArrayBuffer(f);
 }
 function saveCfgV(){CFG._cfgTs=Date.now();saveCfg();}
-function syncedSettings(){return {photoReq:CFG.photoReq,repPhotoReq:CFG.repPhotoReq,geofence:CFG.geofence,minMin:CFG.minMin,openHours:CFG.openHours,exitRadius:CFG.exitRadius,requireLoc:CFG.requireLoc,learn:CFG.learn,mgrPin:CFG.mgrPin,_cfgTs:CFG._cfgTs||0};}
+function syncedSettings(){return {photoReq:CFG.photoReq,repPhotoReq:CFG.repPhotoReq,geofence:CFG.geofence,minMin:CFG.minMin,openHours:CFG.openHours,exitRadius:CFG.exitRadius,clearedBefore:CFG.clearedBefore,requireLoc:CFG.requireLoc,learn:CFG.learn,mgrPin:CFG.mgrPin,_cfgTs:CFG._cfgTs||0};}
 async function pushConfig(){if(!CFG.backend||S.role!=='manager')return;try{await fetch(CFG.backend,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveConfig',stores:STORES,reps:REPS,settings:syncedSettings()})})}catch(e){}}
-async function pullConfig(){if(!CFG.backend)return;try{const r=await fetch(CFG.backend+'?action=getConfig');const d=await r.json();if(d&&d.config){const c=d.config;if(c.stores&&c.stores.length){const bmap={};c.stores.forEach(x=>{bmap[storeKey(x)]=x});STORES.forEach(s2=>{const b=bmap[storeKey(s2)];if(b){if(b.lat!=null&&b.lng!=null){s2.lat=b.lat;s2.lng=b.lng;}if(b.rep)s2.rep=b.rep;}});LS.set('mff_stores',STORES);}if(c.reps&&c.reps.length){const rmap={};c.reps.forEach(x=>{rmap[x.key]=x});REPS.forEach(r=>{const b=rmap[r.key];if(b){if(b.pin)r.pin=b.pin;if(b.full)r.full=b.full;if(b.name)r.name=b.name;}});LS.set('mff_reps',REPS);}if(c.settings){const ss=c.settings;if((ss._cfgTs||0)>=(CFG._cfgTs||0)){['photoReq','repPhotoReq','geofence','minMin','openHours','exitRadius','requireLoc','learn','mgrPin'].forEach(k=>{if(ss[k]!==undefined&&ss[k]!==null)CFG[k]=ss[k];});CFG._cfgTs=ss._cfgTs||CFG._cfgTs||0;LS.set('mff_cfg',CFG);}}}}catch(e){}}
+async function pullConfig(){if(!CFG.backend)return;try{const r=await fetch(CFG.backend+'?action=getConfig');const d=await r.json();if(d&&d.config){const c=d.config;if(c.stores&&c.stores.length){const bmap={};c.stores.forEach(x=>{bmap[storeKey(x)]=x});STORES.forEach(s2=>{const b=bmap[storeKey(s2)];if(b){if(b.lat!=null&&b.lng!=null){s2.lat=b.lat;s2.lng=b.lng;}if(b.rep)s2.rep=b.rep;}});LS.set('mff_stores',STORES);}if(c.reps&&c.reps.length){const rmap={};c.reps.forEach(x=>{rmap[x.key]=x});REPS.forEach(r=>{const b=rmap[r.key];if(b){if(b.pin)r.pin=b.pin;if(b.full)r.full=b.full;if(b.name)r.name=b.name;}});LS.set('mff_reps',REPS);}if(c.settings){const ss=c.settings;if((ss._cfgTs||0)>=(CFG._cfgTs||0)){['photoReq','repPhotoReq','geofence','minMin','openHours','exitRadius','clearedBefore','requireLoc','learn','mgrPin'].forEach(k=>{if(ss[k]!==undefined&&ss[k]!==null)CFG[k]=ss[k];});CFG._cfgTs=ss._cfgTs||CFG._cfgTs||0;LS.set('mff_cfg',CFG);}}}}catch(e){}}
 async function resolveLocations(btn){
  if(!CFG.backend){toast(t('resolveNeed'),'bad');return}
  const orig=btn.innerHTML;btn.innerHTML='<span class="spin"></span>';btn.style.pointerEvents='none';
