@@ -578,6 +578,34 @@ const LS = {
   set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}},
   del:(k)=>{try{localStorage.removeItem(k)}catch(e){}}
 };
+/* ============================================================================
+   PHOTO VAULT (IndexedDB)
+   Root-cause fix: photos were kept as base64 inside localStorage (~5MB cap),
+   so ~3 visits filled it and every later save failed SILENTLY. That single
+   silent failure caused: visits staying "open" after submit, photos vanishing,
+   and wrong durations. Photos now live in IndexedDB (hundreds of MB), while
+   localStorage keeps only a tiny token. Nothing is ever lost again.
+   ==========================================================================*/
+const PH_TOKEN='__idb__';
+const PV=(()=>{const NAME='mff_photo_vault',STORE='p';let _db=null;
+ function db(){if(_db)return _db;_db=new Promise((res,rej)=>{try{const rq=indexedDB.open(NAME,1);
+  rq.onupgradeneeded=()=>{const d=rq.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE)};
+  rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error);}catch(e){rej(e)}});return _db}
+ function tx(mode,fn){return db().then(d=>new Promise((res,rej)=>{const t=d.transaction(STORE,mode),s=t.objectStore(STORE);let r;try{r=fn(s)}catch(e){rej(e);return}
+  t.oncomplete=()=>res(r&&typeof r==='object'&&'result' in r?r.result:r);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error);}))}
+ return{
+  ok(){try{return typeof indexedDB!=='undefined'&&!!indexedDB}catch(e){return false}},
+  put(id,k,val){return tx('readwrite',s=>s.put(val,id+'::'+k)).catch(()=>{})},
+  all(){return tx('readonly',s=>s.getAllKeys()).then(keys=>tx('readonly',s=>s.getAll()).then(vals=>{const m={};(keys||[]).forEach((k,i)=>m[k]=vals[i]);return m})).catch(()=>({}))},
+  delVisit(id){return tx('readonly',s=>s.getAllKeys()).then(keys=>{const mine=(keys||[]).filter(k=>String(k).indexOf(id+'::')===0);if(!mine.length)return;return tx('readwrite',s=>{mine.forEach(k=>s.delete(k))})}).catch(()=>{})}
+ }})();
+/* Put the real image data back on the visit objects at startup (localStorage
+   only holds tokens). Runs before the first render so nothing looks missing. */
+function hydratePhotos(){if(!PV.ok())return Promise.resolve();
+ return PV.all().then(m=>{if(!m)return;const a=Visits.all();
+  a.forEach(v=>{['photos','morePhotos'].forEach(f=>{const o=v[f];if(!o)return;
+   Object.keys(o).forEach(k=>{if(o[k]===PH_TOKEN){const d=m[v.id+'::'+f+':'+k];if(d)o[k]=d;else delete o[k];}})})});
+  Visits.cache=a;}).catch(()=>{})}
 const CFG = Object.assign({lang:'en',backend:'',geofence:500,minMin:40,mgrPin:DEFAULT_MGR_PIN,openHours:4,exitRadius:800,clearedBefore:0,visitTarget:4,reminderDays:3,weeklyTarget:1,mgrPhone:'',learn:false,requireLoc:false,photoRetentionDays:90,photoClean:true,calMode:'month',periodAnchor:'',photoReq:{shelf:true,fruity:true,back:true,price:true,promo:true},repPhotoReq:{}},LS.get('mff_cfg',{}));
 (function(){try{var FIXV=3;if((CFG._calFix||0)<FIXV){CFG.periodAnchor='';CFG.calMode='period';CFG._calFix=FIXV;LS.set('mff_cfg',CFG);}}catch(e){}})();
 if(DEFAULT_BACKEND&&!CFG.backend)CFG.backend=DEFAULT_BACKEND;
@@ -612,7 +640,7 @@ const DICT={
   locOk:'Location confirmed',locFar:'Too far from store',locUnset:'Store location not set',firstVisitT:'First visit \u2014 setting location',
   locFarS:'You are {d} away. Move within {r} m of the store to start.',locOkS:'You are {d} from the store.',
   locUnsetS:'First visit \u2014 your current spot becomes this store\u2019s location. The 500 m rule applies from the next visit.',
-  recheck:'Recheck location',mustBeAt:'You must be at the store to begin',geoIntroT:'Confirm you\u2019re at the store',geoIntroS:'Your location confirms you are at the store. Tap \u201cAllow\u201d when asked \u2014 do not tap \u201cDon\u2019t Allow\u201d.',allowLoc:'Enable location',gpsoff:'Location access needed',autoExitMsg:'You left the store area \u2014 the visit was submitted automatically.',retroExitMsg:'Visit closed automatically \u2014 you left the store while the app was in the background. The real in-store time was recorded.',autoExitTag:'Auto-closed (left area)',interrupted:'Interrupted \u2014 rep left & returned (away time not counted)',overlapTag:'Overlapped another visit \u2014 overlap not counted',blockT:'You have an open visit',blockS:'Your visit at {name} is still open. Finish it or cancel it before starting a new store.',blockResume:'Resume that visit',blockCancel:'Cancel it & start here',visitCancelled:'Open visit cancelled',prevAutoSub:'Your previous visit at {name} was saved automatically \u2014 you can start here.',prevDiscard:'The previous empty visit was cleared.',monitoring:'Visit in progress \u00b7 please stay inside the store',camHint:'',camErr:'Camera unavailable',noCoordsT:'Store location not set',noCoordsS:'Ask the manager to set this store location (Stores \u25b8 tap the store), then retry.',checkInL:'Check-in',checkOutL:'Check-out',storeCodeL:'Store code',gpsL:'GPS',setLoc:'Set store location',setLocS:'Paste a Maps link or coordinates, or use your current GPS while standing at the store.',useMyLoc:'Use my current location',locSaved:'Location saved',noCoordsYet:'Not set',clearLoc:'Clear location',pasteHint:'Paste a WhatsApp location, a Maps link, or coordinates \u2014 it reads them automatically.',pasteBtn:'Paste',coordOk:'\u2713 Coordinates read',coordBad:'Couldn\u2019t read coordinates from that text',coordResolving:'Reading location\u2026',coordResolveFail:'Couldn\u2019t read this link \u2014 open it in Maps, then paste the numbers (e.g. 26.33, 43.97)',coordNoBackend:'Short links need the server. Open the link in Maps and paste the numbers (e.g. 26.33, 43.97)',clipEmpty:'Clipboard is empty \u2014 copy the location first',clipManual:'Long-press the field and choose Paste',
+  recheck:'Recheck location',mustBeAt:'You must be at the store to begin',geoIntroT:'Confirm you\u2019re at the store',geoIntroS:'Your location confirms you are at the store. Tap \u201cAllow\u201d when asked \u2014 do not tap \u201cDon\u2019t Allow\u201d.',allowLoc:'Enable location',gpsoff:'Location access needed',autoExitMsg:'You left the store area \u2014 the visit was submitted automatically.',retroExitMsg:'Visit closed automatically \u2014 you left the store while the app was in the background. The real in-store time was recorded.',autoExitTag:'Auto-closed (left area)',interrupted:'Interrupted \u2014 rep left & returned (away time not counted)',overlapTag:'Overlapped another visit \u2014 overlap not counted',blockT:'You have an open visit',blockS:'Your visit at {name} is still open. Finish it or cancel it before starting a new store.',blockResume:'Resume that visit',blockCancel:'Cancel it & start here',visitCancelled:'Open visit cancelled',prevAutoSub:'Your previous visit at {name} was saved automatically \u2014 you can start here.',prevDiscard:'The previous empty visit was cleared.',sentNotifTitle:'Visit sent successfully',sentNotifBody:'Your visit at {s} reached the server safely.',monitoring:'Visit in progress \u00b7 please stay inside the store',camHint:'',camErr:'Camera unavailable',noCoordsT:'Store location not set',noCoordsS:'Ask the manager to set this store location (Stores \u25b8 tap the store), then retry.',checkInL:'Check-in',checkOutL:'Check-out',storeCodeL:'Store code',gpsL:'GPS',setLoc:'Set store location',setLocS:'Paste a Maps link or coordinates, or use your current GPS while standing at the store.',useMyLoc:'Use my current location',locSaved:'Location saved',noCoordsYet:'Not set',clearLoc:'Clear location',pasteHint:'Paste a WhatsApp location, a Maps link, or coordinates \u2014 it reads them automatically.',pasteBtn:'Paste',coordOk:'\u2713 Coordinates read',coordBad:'Couldn\u2019t read coordinates from that text',coordResolving:'Reading location\u2026',coordResolveFail:'Couldn\u2019t read this link \u2014 open it in Maps, then paste the numbers (e.g. 26.33, 43.97)',coordNoBackend:'Short links need the server. Open the link in Maps and paste the numbers (e.g. 26.33, 43.97)',clipEmpty:'Clipboard is empty \u2014 copy the location first',clipManual:'Long-press the field and choose Paste',
   gpsHelp:'Allow location for this site, then tap recheck. After the first time it is automatic.',
   photos:'Store / section photos',photosSub:'',
   ph_shelf:'Main shelf',ph_fruity:'Fruity section',ph_back:'Back / stock room',ph_price:'Pricing',ph_promo:'Promotion',
@@ -666,7 +694,7 @@ const DICT={
   locOk:'\u062a\u0645 \u062a\u0623\u0643\u064a\u062f \u0627\u0644\u0645\u0648\u0642\u0639',locFar:'\u0628\u0639\u064a\u062f \u0639\u0646 \u0627\u0644\u0645\u062a\u062c\u0631',locUnset:'\u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631 \u063a\u064a\u0631 \u0645\u062d\u062f\u062f',firstVisitT:'\u0623\u0648\u0644 \u0632\u064a\u0627\u0631\u0629 \u2014 \u062c\u0627\u0631\u064d \u062d\u0641\u0638 \u0627\u0644\u0645\u0648\u0642\u0639',
   locFarS:'\u062a\u0628\u0639\u062f {d} \u0639\u0646 \u0627\u0644\u0645\u062a\u062c\u0631. \u0627\u0642\u062a\u0631\u0628 \u0644\u0645\u0633\u0627\u0641\u0629 {r} \u0645\u062a\u0631 \u0644\u0644\u0628\u062f\u0621.',locOkS:'\u062a\u0628\u0639\u062f {d} \u0639\u0646 \u0627\u0644\u0645\u062a\u062c\u0631.',
   locUnsetS:'\u0623\u0648\u0644 \u0632\u064a\u0627\u0631\u0629 \u2014 \u0645\u0648\u0642\u0639\u0643 \u0627\u0644\u062d\u0627\u0644\u064a \u064a\u0635\u0628\u062d \u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631. \u0648\u062a\u064f\u0637\u0628\u0651\u0642 \u0642\u0627\u0639\u062f\u0629 500\u0645 \u0645\u0646 \u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u0627\u0644\u062a\u0627\u0644\u064a\u0629.',
-  recheck:'\u0625\u0639\u0627\u062f\u0629 \u0641\u062d\u0635 \u0627\u0644\u0645\u0648\u0642\u0639',mustBeAt:'\u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062a\u062c\u0631 \u0644\u0644\u0628\u062f\u0621',geoIntroT:'\u062a\u0623\u0643\u064a\u062f \u0648\u062c\u0648\u062f\u0643 \u0628\u0627\u0644\u0645\u062a\u062c\u0631',geoIntroS:'\u0645\u0648\u0642\u0639\u0643 \u064a\u0624\u0643\u0651\u062f \u0648\u062c\u0648\u062f\u0643 \u0628\u0627\u0644\u0645\u062a\u062c\u0631. \u0627\u0636\u063a\u0637 \u00ab\u0627\u0644\u0633\u0645\u0627\u062d\u00bb \u0639\u0646\u062f \u0627\u0644\u0633\u0624\u0627\u0644 \u2014 \u0648\u0644\u0627 \u062a\u0636\u063a\u0637 \u00ab\u0639\u062f\u0645 \u0627\u0644\u0633\u0645\u0627\u062d\u00bb.',allowLoc:'\u062a\u0641\u0639\u064a\u0644 \u0627\u0644\u0645\u0648\u0642\u0639',gpsoff:'\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0645\u0648\u0642\u0639 \u0645\u0637\u0644\u0648\u0628',autoExitMsg:'\u063a\u0627\u062f\u0631\u062a \u0646\u0637\u0627\u0642 \u0627\u0644\u0645\u062a\u062c\u0631 \u2014 \u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',retroExitMsg:'أُغلقت الزيارة تلقائياً — غادرت المتجر والتطبيق في الخلفية. سُجّل وقت التواجد الفعلي داخل المتجر.',autoExitTag:'\u0625\u063a\u0644\u0627\u0642 \u062a\u0644\u0642\u0627\u0626\u064a (\u0645\u063a\u0627\u062f\u0631\u0629 \u0627\u0644\u0646\u0637\u0627\u0642)',interrupted:'\u0645\u062a\u0642\u0637\u0639\u0629 \u2014 \u062e\u0631\u062c \u0627\u0644\u0645\u0646\u062f\u0648\u0628 \u0648\u0639\u0627\u062f (\u0644\u0645 \u064a\u064f\u062d\u062a\u0633\u0628 \u0632\u0645\u0646 \u0627\u0644\u063a\u064a\u0627\u0628)',overlapTag:'تداخلت مع زيارة أخرى — لم يُحتسب وقت التداخل',blockT:'لديك زيارة مفتوحة',blockS:'زيارتك في {name} ما زالت مفتوحة. أنهِها أو ألغِها قبل بدء متجر جديد.',blockResume:'استئناف تلك الزيارة',blockCancel:'إلغاؤها والبدء هنا',visitCancelled:'أُلغيت الزيارة المفتوحة',prevAutoSub:'تم حفظ زيارتك السابقة في {name} تلقائياً \u2014 يمكنك البدء هنا.',prevDiscard:'تم مسح الزيارة السابقة الفارغة.',monitoring:'\u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u062c\u0627\u0631\u064a\u0629 \u00b7 \u064a\u064f\u0631\u062c\u0649 \u0627\u0644\u0628\u0642\u0627\u0621 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062a\u062c\u0631',camHint:'',camErr:'\u0627\u0644\u0643\u0627\u0645\u064a\u0631\u0627 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629',noCoordsT:'\u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631 \u063a\u064a\u0631 \u0645\u062d\u062f\u062f',noCoordsS:'\u0627\u0637\u0644\u0628 \u0645\u0646 \u0627\u0644\u0645\u062f\u064a\u0631 \u062a\u062d\u062f\u064a\u062f \u0645\u0648\u0642\u0639 \u0647\u0630\u0627 \u0627\u0644\u0645\u062a\u062c\u0631 (\u0627\u0644\u0645\u062a\u0627\u062c\u0631 \u25b8 \u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0627\u0644\u0645\u062a\u062c\u0631) \u062b\u0645 \u0623\u0639\u062f \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629.',checkInL:'\u0648\u0642\u062a \u0627\u0644\u062f\u062e\u0648\u0644',checkOutL:'\u0648\u0642\u062a \u0627\u0644\u062e\u0631\u0648\u062c',storeCodeL:'\u0643\u0648\u062f \u0627\u0644\u0645\u062a\u062c\u0631',gpsL:'\u0627\u0644\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a',setLoc:'\u062a\u062d\u062f\u064a\u062f \u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631',setLocS:'\u0627\u0644\u0635\u0642 \u0631\u0627\u0628\u0637 \u062e\u0631\u0627\u0626\u0637 \u0623\u0648 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a\u060c \u0623\u0648 \u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0648\u0642\u0639\u0643 \u0627\u0644\u062d\u0627\u0644\u064a \u0648\u0623\u0646\u062a \u0641\u064a \u0627\u0644\u0645\u062a\u062c\u0631.',useMyLoc:'\u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0648\u0642\u0639\u064a \u0627\u0644\u062d\u0627\u0644\u064a',locSaved:'\u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u0645\u0648\u0642\u0639',noCoordsYet:'\u063a\u064a\u0631 \u0645\u062d\u062f\u062f',clearLoc:'\u0645\u0633\u062d \u0627\u0644\u0645\u0648\u0642\u0639',pasteHint:'\u0627\u0644\u0635\u0642 \u0645\u0648\u0642\u0639 \u0627\u0644\u0648\u0627\u062a\u0633\u0627\u0628 \u0623\u0648 \u0631\u0627\u0628\u0637 \u0627\u0644\u062e\u0631\u0627\u0626\u0637 \u0623\u0648 \u0627\u0644\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a \u2014 \u064a\u0642\u0631\u0623\u0647\u0627 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',pasteBtn:'\u0644\u0635\u0642',coordOk:'\u2713 \u062a\u0645 \u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a',coordBad:'\u062a\u0639\u0630\u0631\u062a \u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a \u0645\u0646 \u0647\u0630\u0627 \u0627\u0644\u0646\u0635',coordResolving:'\u062c\u0627\u0631\u064d \u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0645\u0648\u0642\u0639\u2026',coordResolveFail:'\u062a\u0639\u0630\u0631\u062a \u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0631\u0627\u0628\u0637 \u2014 \u0627\u0641\u062a\u062d\u0647 \u0641\u064a \u0627\u0644\u062e\u0631\u0627\u0626\u0637 \u062b\u0645 \u0627\u0644\u0635\u0642 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 (\u0645\u062b\u0644 26.33\u060c 43.97)',coordNoBackend:'\u0627\u0644\u0631\u0648\u0627\u0628\u0637 \u0627\u0644\u0645\u062e\u062a\u0635\u0631\u0629 \u062a\u062d\u062a\u0627\u062c \u0627\u0644\u062e\u0627\u062f\u0645. \u0627\u0641\u062a\u062d \u0627\u0644\u0631\u0627\u0628\u0637 \u0641\u064a \u0627\u0644\u062e\u0631\u0627\u0626\u0637 \u0648\u0627\u0644\u0635\u0642 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 (\u0645\u062b\u0644 26.33\u060c 43.97)',clipEmpty:'\u0627\u0644\u062d\u0627\u0641\u0638\u0629 \u0641\u0627\u0631\u063a\u0629 \u2014 \u0627\u0646\u0633\u062e \u0627\u0644\u0645\u0648\u0642\u0639 \u0623\u0648\u0644\u0627\u064b',clipManual:'\u0627\u0636\u063a\u0637 \u0645\u0637\u0648\u0644\u0627\u064b \u0639\u0644\u0649 \u0627\u0644\u062d\u0642\u0644 \u0648\u0627\u062e\u062a\u0631 \u0644\u0635\u0642',
+  recheck:'\u0625\u0639\u0627\u062f\u0629 \u0641\u062d\u0635 \u0627\u0644\u0645\u0648\u0642\u0639',mustBeAt:'\u064a\u062c\u0628 \u0623\u0646 \u062a\u0643\u0648\u0646 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062a\u062c\u0631 \u0644\u0644\u0628\u062f\u0621',geoIntroT:'\u062a\u0623\u0643\u064a\u062f \u0648\u062c\u0648\u062f\u0643 \u0628\u0627\u0644\u0645\u062a\u062c\u0631',geoIntroS:'\u0645\u0648\u0642\u0639\u0643 \u064a\u0624\u0643\u0651\u062f \u0648\u062c\u0648\u062f\u0643 \u0628\u0627\u0644\u0645\u062a\u062c\u0631. \u0627\u0636\u063a\u0637 \u00ab\u0627\u0644\u0633\u0645\u0627\u062d\u00bb \u0639\u0646\u062f \u0627\u0644\u0633\u0624\u0627\u0644 \u2014 \u0648\u0644\u0627 \u062a\u0636\u063a\u0637 \u00ab\u0639\u062f\u0645 \u0627\u0644\u0633\u0645\u0627\u062d\u00bb.',allowLoc:'\u062a\u0641\u0639\u064a\u0644 \u0627\u0644\u0645\u0648\u0642\u0639',gpsoff:'\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0645\u0648\u0642\u0639 \u0645\u0637\u0644\u0648\u0628',autoExitMsg:'\u063a\u0627\u062f\u0631\u062a \u0646\u0637\u0627\u0642 \u0627\u0644\u0645\u062a\u062c\u0631 \u2014 \u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',retroExitMsg:'أُغلقت الزيارة تلقائياً — غادرت المتجر والتطبيق في الخلفية. سُجّل وقت التواجد الفعلي داخل المتجر.',autoExitTag:'\u0625\u063a\u0644\u0627\u0642 \u062a\u0644\u0642\u0627\u0626\u064a (\u0645\u063a\u0627\u062f\u0631\u0629 \u0627\u0644\u0646\u0637\u0627\u0642)',interrupted:'\u0645\u062a\u0642\u0637\u0639\u0629 \u2014 \u062e\u0631\u062c \u0627\u0644\u0645\u0646\u062f\u0648\u0628 \u0648\u0639\u0627\u062f (\u0644\u0645 \u064a\u064f\u062d\u062a\u0633\u0628 \u0632\u0645\u0646 \u0627\u0644\u063a\u064a\u0627\u0628)',overlapTag:'تداخلت مع زيارة أخرى — لم يُحتسب وقت التداخل',blockT:'لديك زيارة مفتوحة',blockS:'زيارتك في {name} ما زالت مفتوحة. أنهِها أو ألغِها قبل بدء متجر جديد.',blockResume:'استئناف تلك الزيارة',blockCancel:'إلغاؤها والبدء هنا',visitCancelled:'أُلغيت الزيارة المفتوحة',prevAutoSub:'تم حفظ زيارتك السابقة في {name} تلقائياً \u2014 يمكنك البدء هنا.',prevDiscard:'تم مسح الزيارة السابقة الفارغة.',sentNotifTitle:'تم إرسال الزيارة بنجاح',sentNotifBody:'وصلت زيارتك في {s} إلى السيرفر بأمان.',monitoring:'\u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u062c\u0627\u0631\u064a\u0629 \u00b7 \u064a\u064f\u0631\u062c\u0649 \u0627\u0644\u0628\u0642\u0627\u0621 \u062f\u0627\u062e\u0644 \u0627\u0644\u0645\u062a\u062c\u0631',camHint:'',camErr:'\u0627\u0644\u0643\u0627\u0645\u064a\u0631\u0627 \u063a\u064a\u0631 \u0645\u062a\u0627\u062d\u0629',noCoordsT:'\u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631 \u063a\u064a\u0631 \u0645\u062d\u062f\u062f',noCoordsS:'\u0627\u0637\u0644\u0628 \u0645\u0646 \u0627\u0644\u0645\u062f\u064a\u0631 \u062a\u062d\u062f\u064a\u062f \u0645\u0648\u0642\u0639 \u0647\u0630\u0627 \u0627\u0644\u0645\u062a\u062c\u0631 (\u0627\u0644\u0645\u062a\u0627\u062c\u0631 \u25b8 \u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0627\u0644\u0645\u062a\u062c\u0631) \u062b\u0645 \u0623\u0639\u062f \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629.',checkInL:'\u0648\u0642\u062a \u0627\u0644\u062f\u062e\u0648\u0644',checkOutL:'\u0648\u0642\u062a \u0627\u0644\u062e\u0631\u0648\u062c',storeCodeL:'\u0643\u0648\u062f \u0627\u0644\u0645\u062a\u062c\u0631',gpsL:'\u0627\u0644\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a',setLoc:'\u062a\u062d\u062f\u064a\u062f \u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062a\u062c\u0631',setLocS:'\u0627\u0644\u0635\u0642 \u0631\u0627\u0628\u0637 \u062e\u0631\u0627\u0626\u0637 \u0623\u0648 \u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a\u060c \u0623\u0648 \u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0648\u0642\u0639\u0643 \u0627\u0644\u062d\u0627\u0644\u064a \u0648\u0623\u0646\u062a \u0641\u064a \u0627\u0644\u0645\u062a\u062c\u0631.',useMyLoc:'\u0627\u0633\u062a\u062e\u062f\u0645 \u0645\u0648\u0642\u0639\u064a \u0627\u0644\u062d\u0627\u0644\u064a',locSaved:'\u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u0645\u0648\u0642\u0639',noCoordsYet:'\u063a\u064a\u0631 \u0645\u062d\u062f\u062f',clearLoc:'\u0645\u0633\u062d \u0627\u0644\u0645\u0648\u0642\u0639',pasteHint:'\u0627\u0644\u0635\u0642 \u0645\u0648\u0642\u0639 \u0627\u0644\u0648\u0627\u062a\u0633\u0627\u0628 \u0623\u0648 \u0631\u0627\u0628\u0637 \u0627\u0644\u062e\u0631\u0627\u0626\u0637 \u0623\u0648 \u0627\u0644\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a \u2014 \u064a\u0642\u0631\u0623\u0647\u0627 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',pasteBtn:'\u0644\u0635\u0642',coordOk:'\u2713 \u062a\u0645 \u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a',coordBad:'\u062a\u0639\u0630\u0631\u062a \u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0625\u062d\u062f\u0627\u062b\u064a\u0627\u062a \u0645\u0646 \u0647\u0630\u0627 \u0627\u0644\u0646\u0635',coordResolving:'\u062c\u0627\u0631\u064d \u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0645\u0648\u0642\u0639\u2026',coordResolveFail:'\u062a\u0639\u0630\u0631\u062a \u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0631\u0627\u0628\u0637 \u2014 \u0627\u0641\u062a\u062d\u0647 \u0641\u064a \u0627\u0644\u062e\u0631\u0627\u0626\u0637 \u062b\u0645 \u0627\u0644\u0635\u0642 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 (\u0645\u062b\u0644 26.33\u060c 43.97)',coordNoBackend:'\u0627\u0644\u0631\u0648\u0627\u0628\u0637 \u0627\u0644\u0645\u062e\u062a\u0635\u0631\u0629 \u062a\u062d\u062a\u0627\u062c \u0627\u0644\u062e\u0627\u062f\u0645. \u0627\u0641\u062a\u062d \u0627\u0644\u0631\u0627\u0628\u0637 \u0641\u064a \u0627\u0644\u062e\u0631\u0627\u0626\u0637 \u0648\u0627\u0644\u0635\u0642 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 (\u0645\u062b\u0644 26.33\u060c 43.97)',clipEmpty:'\u0627\u0644\u062d\u0627\u0641\u0638\u0629 \u0641\u0627\u0631\u063a\u0629 \u2014 \u0627\u0646\u0633\u062e \u0627\u0644\u0645\u0648\u0642\u0639 \u0623\u0648\u0644\u0627\u064b',clipManual:'\u0627\u0636\u063a\u0637 \u0645\u0637\u0648\u0644\u0627\u064b \u0639\u0644\u0649 \u0627\u0644\u062d\u0642\u0644 \u0648\u0627\u062e\u062a\u0631 \u0644\u0635\u0642',
   gpsHelp:'\u0627\u0633\u0645\u062d \u0628\u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0645\u0648\u0642\u0639 \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0648\u0642\u0639\u060c \u062b\u0645 \u0623\u0639\u062f \u0627\u0644\u0641\u062d\u0635. \u0628\u0639\u062f \u0623\u0648\u0644 \u0645\u0631\u0629 \u064a\u0635\u0628\u062d \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627.',
   photos:'\u0635\u0648\u0631 \u0627\u0644\u0645\u062a\u062c\u0631 / \u0627\u0644\u0623\u0642\u0633\u0627\u0645',photosSub:'',
   ph_shelf:'\u0627\u0644\u0631\u0641 \u0627\u0644\u0631\u0626\u064a\u0633\u064a',ph_fruity:'\u0642\u0633\u0645 \u0641\u0631\u0648\u062a\u064a',ph_back:'\u0627\u0644\u0628\u0627\u0628 \u0627\u0644\u062e\u0644\u0641\u064a / \u0627\u0644\u0645\u062e\u0632\u0646',ph_price:'\u0627\u0644\u0623\u0633\u0639\u0627\u0631',ph_promo:'\u0627\u0644\u0639\u0631\u0636 \u0627\u0644\u062a\u0631\u0648\u064a\u062c\u064a',
@@ -804,14 +832,49 @@ const I={
 const Visits={
  key:'mff_visits',cache:null,
  all(){if(this.cache)return this.cache;this.cache=LS.get(this.key,[]);return this.cache},
- save(arr){this.cache=arr;try{LS.set(this.key,this.prune(arr))}catch(e){}},
+ save(arr){this.cache=arr;
+  let lite;
+  try{
+   lite=this.prune(arr).map(v=>{let touched=false;const copy=Object.assign({},v);
+    ['photos','morePhotos'].forEach(f=>{const o=v[f];if(!o)return;const out={};
+     Object.keys(o).forEach(k=>{const val=o[k];
+      if(typeof val==='string'&&val.slice(0,5)==='data:'){out[k]=PH_TOKEN;touched=true;try{PV.put(v.id,f+':'+k,val)}catch(e){}}
+      else out[k]=val});
+     if(touched)copy[f]=out});
+    return touched?copy:v});
+  }catch(e){lite=arr}
+  if(LS.set(this.key,lite))return;
+  /* Storage still full: evict ONLY old already-synced visits. An open or
+     unsynced visit is never dropped, so no field work can ever be lost. */
+  try{const keep=lite.slice();
+   for(let i=0;i<200&&keep.length>1;i++){
+    let idx=-1,oldest=Infinity;
+    keep.forEach((v,j)=>{if(v.status==='open'||!v.synced)return;const t0=new Date(v.start).getTime();if(t0<oldest){oldest=t0;idx=j}});
+    if(idx<0)break;
+    const gone=keep.splice(idx,1)[0];try{PV.delVisit(gone.id)}catch(e){}
+    if(LS.set(this.key,keep))return;
+   }
+   LS.set(this.key,keep.filter(v=>v.status==='open'||!v.synced));
+  }catch(e){}
+ },
  prune(arr){if(!CFG.backend)return arr;const cut=Date.now()-90*86400000;return arr.filter(v=>v.status==='open'||!v.synced||(new Date(v.start).getTime()>cut))},
  add(v){const a=this.all();a.push(v);this.save(a);this.push(v);return v},
  remove(id){this.save(this.all().filter(x=>x.id!==id));},
  cancel(id){const a=this.all();const i=a.findIndex(x=>x.id===id);if(i<0)return;const v=Object.assign({},a[i],{status:'cancelled',end:nowISO()});a.splice(i,1);this.save(a);try{const c=LS.get('mff_cancelled',[]);if(c.indexOf(id)<0){c.push(id);LS.set('mff_cancelled',c);}}catch(e){}this.push(v);},
  async syncPending(){if(!CFG.backend)return;const a=this.all().filter(v=>v.status==='done'&&!v.synced);for(const v of a){await this.push(v);}},
  update(id,patch){const a=this.all();const i=a.findIndex(x=>x.id===id);if(i>=0){a[i]=Object.assign(a[i],patch);this.save(a);if(a[i].status!=='open'&&!a[i].synced)this.push(a[i])}return a[i]},
- async push(v){if(!CFG.backend)return;try{const payload=v;const r=await fetch(CFG.backend,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveVisit',visit:payload})});let d=null;try{d=await r.json()}catch(e){}const a=this.all();const i=a.findIndex(x=>x.id===v.id);if(i>=0){a[i].synced=true;if(d&&d.photoUrls&&Object.keys(d.photoUrls).length)a[i].photos=d.photoUrls;this.save(a)}}catch(e){}},
+ async push(v){if(!CFG.backend)return false;
+  try{const r=await fetch(CFG.backend,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveVisit',visit:v})});
+   if(!r.ok)return false;
+   let d=null;try{d=await r.json()}catch(e){}
+   const a=this.all();const i=a.findIndex(x=>x.id===v.id);
+   if(i>=0){a[i].synced=true;
+    if(d&&d.photoUrls&&Object.keys(d.photoUrls).length){a[i].photos=d.photoUrls;try{PV.delVisit(v.id)}catch(e){}} /* server now hosts the images -> reclaim device space */
+    this.save(a);
+    if(a[i].status==='done'&&!a[i].notified){a[i].notified=true;this.save(a);try{notifySent(a[i])}catch(e){}}
+   }
+   return true;
+  }catch(e){return false}},
  async pull(){if(!CFG.backend)return;try{const r=await fetch(CFG.backend+'?action=getVisits');const d=await r.json();if(d&&d.visits){const localAll=this.all();const local=localAll.filter(x=>!x.synced);const map={};d.visits.forEach(v=>map[v.id]=v);local.forEach(v=>map[v.id]=v);const cx=LS.get('mff_cancelled',[]);const cb=CFG.clearedBefore||0;const merged=Object.values(map).filter(v=>v.status!=='cancelled'&&cx.indexOf(v.id)<0&&new Date(v.start).getTime()>cb);merged.forEach(v=>{const loc=localAll.find(x=>x.id===v.id);if(loc){if(loc.photos&&Object.keys(loc.photos).length&&(!v.photos||!Object.keys(v.photos).length))v.photos=loc.photos;if(loc.morePhotos&&Object.keys(loc.morePhotos).length&&(!v.morePhotos||!Object.keys(v.morePhotos).length))v.morePhotos=loc.morePhotos;}});this.cache=merged;try{LS.set(this.key,this.prune(merged))}catch(e){}}}catch(e){}}
 };
 
@@ -942,7 +1005,13 @@ function RepHome(rep){
  if(open){const st=STORES.find(s=>storeKey(s)===open.storeKey)||{name:open.storeName};
   const b=el(`<div class="alertban red" style="margin-top:16px"><div class="ab-ic">${I.alert}</div><div class="grow"><div class="ab-t">${t('openVisitT')}</div><div class="ab-s">${t('openVisitS',{s:esc(st.name)})}</div></div><div class="ab-actions"><button class="ab-go">${t('resume')}</button><button class="ab-discard">${t('discardVisit')}</button></div></div>`);
   b.querySelector('.ab-go').onclick=()=>resumeVisit(open);
-  b.querySelector('.ab-discard').onclick=()=>{if(confirm(t('discardConfirm'))){Visits.cancel(open.id);toast(t('discarded'),'ok');renderRep();}};
+  /* "Discard" used to DELETE the visit and everything in it. It now submits
+     the work instead; only a visit with no photos at all can be removed. */
+  b.querySelector('.ab-discard').onclick=()=>{
+   const hasContent=open.photos&&Object.keys(open.photos).length>0;
+   if(hasContent){if(submitStaleVisit(open)){toast(t('prevAutoSub',{name:open.storeName||''}),'ok');flushOutbox();}renderRep();return;}
+   if(confirm(t('discardConfirm'))){Visits.cancel(open.id);toast(t('discarded'),'ok');renderRep();}
+  };
   wrap.appendChild(b)}
  const mine=storesOf(rep.key);
  const accs=[...new Set(mine.map(s=>s.account))];
@@ -1094,7 +1163,7 @@ function RepProfile(rep){
 }
 
 /* ============ VISIT FLOW ============ */
-function startVisit(store){
+function startVisit(store){ensureNotifyPerm();
  if(CFG.backend&&S.role==='merch'){try{pullConfig()}catch(e){}}
  S.store=store;
  S.visit={id:'v'+Date.now()+Math.random().toString(36).slice(2,6),rep:S.rep,repName:(repByKey(S.rep).full||S.rep),storeKey:storeKey(store),storeName:store.name,account:store.account,city:store.city,code:store.code,start:nowISO(),status:'open',lat:null,lng:null,dist:null,far:false,geoState:'wait',photos:{},naPhotos:{},morePhotos:{},photoNotes:{},visitType:'audit',orderValue:'',orderCases:'',cats:[],prices:false,promo:false,contract:null,rotation:null,oos:'',notes:'',synced:false};
@@ -1119,6 +1188,28 @@ function openVisitBlockSheet(other,s){
  m.querySelector('#cnc').onclick=()=>{close();Visits.cancel(other.id);toast(t('visitCancelled'),'ok');startVisit(s);};
  OV.appendChild(m);
 }
+/* ============================================================================
+   RELIABLE DELIVERY + NOTIFICATIONS
+   A visit is marked done and stored FIRST, then transmitted. If the screen
+   turns off, a call arrives, or the network drops mid-send, the record is
+   already safe on the device and is retried automatically on every return to
+   the app, on reconnect, and every 60s. Delivery is confirmed by a
+   notification, so the rep never has to wonder whether it arrived.
+   ==========================================================================*/
+function ensureNotifyPerm(){try{if('Notification' in window&&Notification.permission==='default')Promise.resolve(Notification.requestPermission()).catch(()=>{})}catch(e){}}
+async function notifySent(v){const body=t('sentNotifBody',{s:(v&&v.storeName)||''});
+ try{if('Notification' in window&&Notification.permission==='granted'){
+  let reg=null;try{reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration()}catch(e){}
+  if(reg&&reg.showNotification){await reg.showNotification(t('sentNotifTitle'),{body:body,tag:'mff-visit-'+(v&&v.id),renotify:false});return}
+  try{new Notification(t('sentNotifTitle'),{body:body});return}catch(e){}
+ }}catch(e){}
+ try{if(document.visibilityState==='visible')toast(body,'ok')}catch(e){}}
+let _flushing=false;
+async function flushOutbox(){if(_flushing||!CFG.backend||!navigator.onLine)return;_flushing=true;
+ try{await Visits.syncPending()}catch(e){}finally{_flushing=false}}
+try{window.addEventListener('online',flushOutbox);}catch(e){}
+try{navigator.serviceWorker&&navigator.serviceWorker.register('./sw.js').catch(()=>{});}catch(e){}
+
 /* --- Auto-finalize a stale OPEN visit left over from a PREVIOUS store, so tapping a new store never shows the confusing resume/ignore prompt and never loses work. --- */
 function submitStaleVisit(v){
  if(!v||v.status!=='open')return false;
@@ -1383,6 +1474,7 @@ function finishVisit(btn){
  const sb=scoreVisit(v);v.scoreBreak=sb;v.score=sb.total;v.status='done';v.synced=false;
  btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
  Visits.update(v.id,{end:v.end,durationMin:v.durationMin,scoreBreak:sb,score:v.score,status:'done',visitType:v.visitType,orderValue:v.orderValue,orderCases:v.orderCases,cats:v.cats,prices:v.prices,promo:v.promo,contract:v.contract,rotation:v.rotation,oos:v.oos,notes:v.notes});
+ flushOutbox();
  setTimeout(()=>{S.step=3;drawVisit()},500);
 }
 function stepDone(body,foot){
@@ -2023,14 +2115,15 @@ function showUpdateBar(remote){
  bar.querySelector('button').onclick=()=>hardReload(remote);
  document.body.appendChild(bar);
 }
-document.addEventListener('visibilitychange',()=>{const v=S.visit;if(document.hidden){if(v&&v.status==='open'){v.bgAt=Date.now();try{Visits.update(v.id,{bgAt:v.bgAt})}catch(e){}}return;}checkUpdate();if(v&&v.status==='open'&&(S.step===1||S.step===2))acquireWakeLock();if(v&&v.status==='open'&&v.bgAt){const gap=Date.now()-v.bgAt;v.bgAt=0;try{Visits.update(v.id,{bgAt:0})}catch(e){}if(gap>=300000){auditWake(v,gap);}else{seenInside(v);try{checkPresence();}catch(e){}}}else{try{checkPresence();}catch(e){}}});
+document.addEventListener('visibilitychange',()=>{const v=S.visit;if(document.hidden){if(v&&v.status==='open'){v.bgAt=Date.now();try{Visits.update(v.id,{bgAt:v.bgAt})}catch(e){}}return;}checkUpdate();flushOutbox();if(v&&v.status==='open'&&(S.step===1||S.step===2))acquireWakeLock();if(v&&v.status==='open'&&v.bgAt){const gap=Date.now()-v.bgAt;v.bgAt=0;try{Visits.update(v.id,{bgAt:0})}catch(e){}if(gap>=300000){auditWake(v,gap);}else{seenInside(v);try{checkPresence();}catch(e){}}}else{try{checkPresence();}catch(e){}}});
 window.addEventListener('pageshow',()=>{try{checkUpdate();}catch(e){}});
 window.addEventListener('focus',()=>{try{checkUpdate();}catch(e){}});
-(function boot(){try{if(LS.get('mff_view','')==='mobile')document.documentElement.classList.add('view-mobile')}catch(e){}
+(async function boot(){try{if(LS.get('mff_view','')==='mobile')document.documentElement.classList.add('view-mobile')}catch(e){}
  const sess=LS.get('mff_session',null);
  if(sess&&sess.role==='merch'&&repByKey(sess.rep)){S.role='merch';S.rep=sess.rep;}
  else if(sess&&sess.role==='manager'){S.role='manager';}
  try{if(CFG.photoClean!==false)cleanOldPhotos();}catch(e){}
+ try{await hydratePhotos();}catch(e){}
  try{reconcileDurations();}catch(e){}
  render();
  setTimeout(checkUpdate,3000);
